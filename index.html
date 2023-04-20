@@ -1,0 +1,33 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <TITLE>Modbus</TITLE>
+     <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class='main'>
+    <div class='top'>Контроллер Modbus</div>
+    <div class='content'>
+		<div class='centre'>
+			<div data-line='Controls'>
+				<div data-click='ask'  title = "отправить запрос" >ASK</div>	
+				<div data-click='find'  title = "сканировать адреса" >FIND</div>	
+			</div>
+			<div data-line='pole'>
+				<div id="pole"></div>
+			</div>
+		</div>
+		<div class='section'>
+			<div data-click='recovery' title = "Выбрать порт"></div>
+			<div data-click='typical'  title = "Информация об адаптере" ></div>	
+			<div data-click='service'  title = "Настройки адаптера" ></div>				
+			<div data-click='clear'  title = "Очистить поле" ></div>
+			<div data-click='get'  title = "Прочитать настройки" ></div>				
+			<div data-click='set'  title = "Записать настройки" ></div>			
+		</div>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
