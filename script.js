@@ -7,7 +7,7 @@ let abonent={
 	ask:0,
 	find:0,
 };
-let controllers=new Set();  //список адресов найденных контроллеров
+let controllers={};  //список адресов найденных контроллеров
 let aa; //= new MyClass(abonent.writer); //параметр - функция отправки сообщения
 let t_start;  //отладочная переменная для измерения времени ответа
 
@@ -156,7 +156,7 @@ let control={
 		}
 	},
 	sk(){
-		for (let value of controllers) {
+		for (let value in controllers) {
 			let adr = new Uint8Array([value, 0x04, 0x00, 0x00, 0x00, 0x05]); //опрос первого адреса
 			let data = control.buff_sum([adr, getCRC(adr)]);
 			aa.add(gen, data, "skud", "ask","");
@@ -166,7 +166,6 @@ let control={
 		if(link.dataset.in==1){
 			link.dataset.in=0;
 			abonent.find=0;
-			//t_start=+new Date();
 		}else{
 			link.dataset.in=1;
 			abonent.find=1;
@@ -181,6 +180,15 @@ let control={
 			let data = control.buff_sum([adr, getCRC(adr)]);
 			aa.add(gen, data, "finder", "find",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
 		}
+		let asd="";
+		for (let value in controllers) {
+			asd=asd+" "+value;
+		}
+		
+		if(+new Date()-t_start){
+			pole.innerText="Addresses found: "+asd+"\r\n"+(+new Date()-t_start);
+		}
+		t_start=+new Date();
 	},
 
 	clear(link){
@@ -243,15 +251,18 @@ let control={
 	},
 	finder(data, comment){ //если ответ есть, добавляем адрес в массив
 		if(data[0]){
-			controllers.add(data[0]);
+			//controllers.add(data[0]);
+			if(!(data[0] in controllers)){
+				controllers[data[0]]={address:data[0]};
+			}
 			//pole.innerText=data[0]+" "+(+new Date()-t_start);
 			//t_start=+new Date();
-			let asd="";
-			for (let value of controllers) {
-				asd=asd+" "+value;
-			}
-			pole.innerText="Addresses found: "+asd+"\r\n"+(+new Date()-t_start);
-			t_start=+new Date();
+			//let asd="";
+			//for (let value of controllers) {
+			//	asd=asd+" "+value;
+			//}
+			//pole.innerText="Addresses found: "+asd+"\r\n"+(+new Date()-t_start);
+			//t_start=+new Date();
 		}
 	},
 };
