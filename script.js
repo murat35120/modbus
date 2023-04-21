@@ -79,13 +79,7 @@ function *gen(data, writer, comment){ //команда с переходом п�
 		txt = control.buff_sum([txt, answer]);
 		if(txt.length>=13){
 			clearTimeout(timer);
-			if(data[0]){
-				if(!(data[0] in controllers)){
-					controllers[data[0]]={address:data[0]};
-					controllers[data[0]].open_door=return_null();//заглушка
-				}
-			}
-			let timer1=setTimeout(()=>{ this.next();}, 5)
+			let timer1=setTimeout(()=>{control[writer]( txt, comment); this.next();}, 5)
 		}
 		answer = yield;
 	}
@@ -102,23 +96,8 @@ function *scan(data, writer, comment){ //команда с переходом п
 		if(txt.length>=13){
 			clearTimeout(timer);
 			txt=new Uint8Array(0);
-			//control[writer]( answer, comment);
+			control[writer]( answer, comment);
 			console.log(writer+" open_door -1");
-			if(answer[4]&0x1F){//ТМ
-				//по адресу находим объект контроллера
-				//в этот объект вставляем экземпляр генератора open_door
-				//если есть карта, добавляем ее номер в объект cards
-				console.log("new skud");
-				if(answer[0] in controllers){
-					//controllers[answer[0]].open_door=open_door();
-					//controllers[answer[0]].open_door.next();
-					yield* open_door (answer, comment);
-				}
-			}else{
-				console.log("skud 2");
-				//controllers[answer[0]].open_door.next();
-				yield* return_null (answer, comment)
-			}
 		}
 		answer = yield;
 	}
@@ -147,7 +126,7 @@ function *open_door(data, comment){ //команда обработки собы
 		timer3=setTimeout(()=>{this.writer.write(msg);}, 5)
 		console.log("open_door 0");
 		//yield 2;
-		this.next();
+		aa.buffer.gen.next();
 		yield 0;
 }
 function *return_null(data, comment){ //функция заглушка
@@ -155,7 +134,7 @@ function *return_null(data, comment){ //функция заглушка
 		//выводим сообщение
 		pole.innerText=data+"\r\n"+(+new Date()-t_start);
 		t_start=+new Date();
-		this.next();
+		aa.buffer.gen.next();
 		yield 0;
 	}
 }
@@ -305,7 +284,6 @@ let control={
 	skud(data, comment){
 		pole.innerText=data+"\r\n"+(+new Date()-t_start);
 		t_start=+new Date();
-		console.log("skud -1 "+data[0]);
 		if(data[0] in controllers){
 			console.log("skud 1");
 			if(data[4]&0x1F){//ТМ
@@ -318,7 +296,7 @@ let control={
 					controllers[data[0]].open_door.next();
 				}
 			}else{
-				console.log("skud 2");
+				console.log("new skud");
 				controllers[data[0]].open_door.next();
 			}
 			if(data[4]&0x10){//DOOR	
