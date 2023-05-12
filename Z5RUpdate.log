@@ -19,3 +19,43 @@
 17-04-2023 17:11:25 | Upload firmware to S/N=26536
 17-04-2023 17:11:59 | Firmware program successfully completed
 17-04-2023 17:12:06 | ------ Stop program  ------
+25-04-2023 14:50:46 | ------ Start program ------
+25-04-2023 14:51:14 | Load image "D:\проект\Modbus\z5rn_wgmod2_38400.rom"
+25-04-2023 14:51:19 | Upload firmware to S/N=26536
+25-04-2023 14:51:52 | Firmware program successfully completed
+25-04-2023 14:52:31 | ------ Stop program  ------
+25-04-2023 14:55:20 | ------ Start program ------
+25-04-2023 14:55:38 | Load image "D:\проект\Modbus\z5r_v2.21_blk.rom"
+25-04-2023 14:55:41 | Upload firmware to S/N=26536
+25-04-2023 14:56:10 | Firmware program successfully completed
+25-04-2023 14:58:15 | ------ Stop program  ------
+25-04-2023 15:00:49 | ------ Start program ------
+25-04-2023 15:01:11 | Load image "D:\проект\Modbus\z5rn_wgmod2_38400.rom"
+25-04-2023 15:01:22 | Upload firmware to S/N=26536
+25-04-2023 15:01:56 | Firmware program successfully completed
+25-04-2023 15:02:02 | ------ Stop program  ------
+25-04-2023 15:25:28 | ------ Start program ------
+25-04-2023 15:25:49 | Load image "D:\проект\Modbus\z5rn_mod14_38400.rom"
+25-04-2023 15:25:53 | Upload firmware to S/N=26536
+25-04-2023 15:26:27 | Firmware program successfully completed
+25-04-2023 15:26:32 | ------ Stop program  ------
+25-04-2023 17:36:36 | ------ Start program ------
+25-04-2023 17:37:00 | Load image "D:\проект\Modbus\z5rn_mod14_38400.rom"
+25-04-2023 17:37:04 | Upload firmware to S/N=26536
+25-04-2023 17:37:38 | Firmware program successfully completed
+25-04-2023 17:37:46 | ------ Stop program  ------
+26-04-2023 10:57:30 | ------ Start program ------
+26-04-2023 10:57:52 | Load image "D:\проект\Modbus\z5rn_mod14_38400.rom"
+26-04-2023 10:57:55 | Upload firmware to S/N=26536
+26-04-2023 10:58:29 | Firmware program successfully completed
+26-04-2023 10:58:36 | ------ Stop program  ------
+26-04-2023 12:26:08 | ------ Start program ------
+26-04-2023 12:26:23 | Load image "D:\проект\Modbus\z5rn_mod15_38400.rom"
+26-04-2023 12:26:27 | Upload firmware to S/N=26536
+26-04-2023 12:27:01 | Firmware program successfully completed
+26-04-2023 12:27:06 | ------ Stop program  ------
+26-04-2023 15:11:18 | ------ Start program ------
+26-04-2023 15:11:34 | Load image "D:\проект\Modbus\z5rn_mod15_38400.rom"
+26-04-2023 15:11:39 | Upload firmware to S/N=26536
+26-04-2023 15:12:14 | Firmware program successfully completed
+26-04-2023 15:12:22 | ------ Stop program  ------

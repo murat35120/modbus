@@ -6,13 +6,11 @@ let abonent={
 	run:1,
 	ask:0,
 	find:0,
-	address:0,//адрес текущего контроллера для ручных команд
 };
 let controllers={};  //список объектов найденных контроллеров по сетевым адресам
 let cards={};  //список объектов карт по номерам карт
 let aa; //хранение экземпляра new MyClass - соответствует конвертеру, в данном случае он один, по этому это не массив
 let t_start;  //отладочная переменная для измерения времени ответа
-
 
 class MyClass { //задача очереди: создать и добавить генераторы,по очереди перебирать их
 	constructor(writer) {
@@ -77,22 +75,9 @@ function *gen(data, writer, comment){ //команда с переходом п�
 	let answer = yield; //получаем ответ от устройства
 	while(true) {
 		txt = control.buff_sum([txt, answer]);
-		if(txt.length>=17){
+		if(txt.length>=13){
 			clearTimeout(timer);
 			let timer1=setTimeout(()=>{control[writer]( txt, comment); this.next();}, 5)
-		}else{		
-			if(txt.length==12){
-				if(txt[1]==1){
-					clearTimeout(timer);
-					let timer1=setTimeout(()=>{control[writer]( txt, comment); this.next();}, 5)
-				}
-			}
-			if(txt.length==8){
-				if(txt[1]==6||txt[3]==16){
-					clearTimeout(timer);
-					let timer1=setTimeout(()=>{control[writer]( txt, comment); this.next();}, 5)
-				}
-			}
 		}
 		answer = yield;
 	}
@@ -102,7 +87,7 @@ function *gen(data, writer, comment){ //команда с переходом п�
 function *scan(data, writer, comment){ //команда с переходом по команде вложенной функции
 	let txt=new Uint8Array(0);
 	this.writer.write(data); //отправляем подготовленное сообщение
-	let timer=setTimeout(()=>{this.next();}, 35);
+	let timer=setTimeout(()=>{this.next();}, 135);
 	let answer = yield; //получаем ответ от устройства
 	while(true) {
 		txt = control.buff_sum([txt, answer]);
@@ -114,98 +99,79 @@ function *scan(data, writer, comment){ //команда с переходом п
 	}
 }
 
-function *cmd(data, writer, comment){ //команда с переходом по команде вложенной функции
-	let txt=new Uint8Array(0);
-	this.writer.write(data); //отправляем подготовленное сообщение
-	let timer=setTimeout(()=>{this.next();}, 35);
-	//console.log(data);
-	let answer = yield; //получаем ответ от устройства
-	while(true) {
-		txt = control.buff_sum([txt, answer]);
-		//console.log(txt);
-		if(txt.length>=8){
-			clearTimeout(timer);
-			yield *read(txt, comment);
-		}
-		
-		answer = yield;
-	}
-}
-
 function *read(data, comment){ //команда обработки событий СКУД
 	if(data){
-		let indication=0;
-		pole.innerText=data.subarray(0,11);//data+"\r\n";
-		if(data.length>=17){
-			a_door.innerText=data.subarray(11,12);
-			a_led.innerText=data.subarray(12,13);
-			a_zp.innerText=data.subarray(13,14);
-			a_12v.innerText=data.subarray(14,15);
-		}
+		pole.innerText=data+"\r\n";
 		if(data[0] in controllers){
-			//a_info.innerText="";
 			if(data[4]&32){//DOOR
-				a_info.innerText="open DOOR";
+				pole.innerText=pole.innerText+ "\r\n"+"open DOOR";
 			}
 			if(!(data[3]&8)){
-			//if(0){
-				controllers[data[0]].lock=0;
-				if(data[4]==1){//TM
-					a_info.innerText= "TM down";
-					open_ind(data[0], 0xff);
+				if(data[4]&1){//TM
+					pole.innerText=pole.innerText+ "\r\n"+"TM down";
+					yield *open(data);
 				}
-				if(data[4]==2){//TM
+				if(data[4]&2){//TM
 					console.log("TM read "+data.subarray(5,11));
 					add_card(data);
-					open_ind(data[0], 0xff);
+					yield *open(data);
 				}
-				if(data[4]==4){//BUTTON
-					a_info.innerText="BUTTON down";
-					open_ind(data[0], 0xff);
+				if(data[4]&4){//BUTTON
+					pole.innerText=pole.innerText+ "\r\n"+"BUTTON down";
+					console.log("reason "+data[3]&8);
+					yield *open(data);
 				}
-				if(data[4]==8){//BUTTON
+				if(data[4]&8){//BUTTON
 					console.log("BUTTON read "+data.subarray(5,11));
 					add_card(data);
-					open_ind(data[0], 0xff);
+					yield *open(data);
 				}
-				if(data[4]==16){//INTERNAL READER
+				if(data[4]&16){//INTERNAL READER
 					console.log("INTERNAL read "+data.subarray(5,11));
 					add_card(data);
-					open_ind(data[0], 0xff);
+					yield *open(data);
 				}
 			}else{
-				//делаем пик-пик
-				a_info.innerText="LOCK opend"; 
-				controllers[data[0]].lock=1;
+				pole.innerText=pole.innerText+ "\r\n"+"LOCK opend";
 			}
-			
+		}
+		if(0){
+			pole.innerText=data+"\r\n"+(+new Date()-t_start);
+			t_start=+new Date();
+			let adr = new Uint8Array([data[0], 0x06, 0x00, 0x04, 0x00, 0xFF]); //открыть замок
+			let msg = control.buff_sum([adr, getCRC(adr)]);//расчитать CRC
+			let timer3=setTimeout(()=>{this.writer.write(msg);}, 5)
+			console.log("open_door 1");
+			data = yield 1;
+			pole.innerText=data+"\r\n"+(+new Date()-t_start);
+			t_start=+new Date();
+			adr = new Uint8Array([data[0], 0x06, 0x00, 0x01, 0x00, 0xFF]); //зеленый светодиод
+			msg = control.buff_sum([adr, getCRC(adr)]);//расчитать CRC
+			timer3=setTimeout(()=>{this.writer.write(msg);}, 5)
+			console.log("open_door 2");
+			data = yield 2;
+			pole.innerText=data+"\r\n"+(+new Date()-t_start);
+			t_start=+new Date();
+			adr = new Uint8Array([data[0], 0x06, 0x00, 0x03, 0x00, 0xFF]); //звук
+			msg = control.buff_sum([adr, getCRC(adr)]);//расчитать CRC
+			timer3=setTimeout(()=>{this.writer.write(msg);}, 5)
+			console.log("open_door 0");
+			yield 2;
 		}
 	}
-	timer=setTimeout(()=>{aa.next();}, 5);
+	aa.next();
 	yield 0;
 }
 
-function open_ind(addr, intr){
-		control.open_lock(addr, intr);
-		controllers[addr].sound.next(1);
-		controllers[addr].green.next(1);
-		controllers[addr].red.next(1);
-}
-
-function *indications(obj, canel, puls, pause){
-	let interval=puls*128/1000;
-	let flg=0;
-	while(true) {
-		if(obj.lock||flg){
-			control[canel](obj.address, interval);
-			setTimeout(()=>{obj[canel].next();}, pause+puls);
-		}
-		flg=yield;
-	}
+function *open(data){
+		let adr = new Uint8Array([data[0], 0x06, 0x00, 0x04, 0x02, 0x02]); //открытие замка
+		let msg = control.buff_sum([adr, getCRC(adr)]);
+		aa.writer.write(msg);
+		yield 2;
 }
 
 function add_card(data){ //пополняем список карт
-	let card=data.subarray(5,11).join(' ');
+	let card=data.subarray(5,11);
 	if(!(card in cards)){
 		cards[card]={number:card};
 	}
@@ -268,7 +234,7 @@ let control={
 		for (let value in controllers) {
 			let adr = new Uint8Array([value, 0x04, 0x00, 0x00, 0x00, 0x05]); //опрос первого адреса
 			let data = control.buff_sum([adr, getCRC(adr)]);
-			aa.add(scan, data, "skud", "ask","");//"skud" - игнорируется
+			aa.add(scan, data, "skud", "ask","");
 		}
 	},
 	find(link){
@@ -295,83 +261,37 @@ let control={
 		}
 		
 		if(+new Date()-t_start){
-			a_info.innerText="Addresses found: "+asd+"\r\n"+(+new Date()-t_start);
+			pole.innerText="Addresses found: "+asd+"\r\n"+(+new Date()-t_start);
 		}
 		t_start=+new Date();
 	},
-	groop(){
-		control.open_lock(abonent.address);
-		control.green(abonent.address);
-		control.red(abonent.address);
-		control.sound(abonent.address);
+
+	clear(link){
+		pole.innerText="";
 	},
-	open_lock(addess, interval=0xff){
-		if(typeof addess=="object"){addess=abonent.address;}
-		let adr = new Uint8Array([addess, 0x06, 0x00, 0x04, 0x00, interval]); //открытие замка
-		let data = control.buff_sum([adr, getCRC(adr)]);
-		aa.add(cmd, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
-	},
-	green(addess, interval=0xff){
-		if(typeof addess=="object"){addess=abonent.address;}
-		let adr = new Uint8Array([addess, 0x06, 0x00, 0x01, 0x00, interval]); //зеленый - контакт LED
-		let data = control.buff_sum([adr, getCRC(adr)]);
-		aa.add(cmd, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
-	},
-	red(addess, interval=0xff){
-		if(typeof addess=="object"){addess=abonent.address;}
-		let adr = new Uint8Array([addess, 0x06, 0x00, 0x02, 0x00, interval]); //красный - контакт ZUMM
-		let data = control.buff_sum([adr, getCRC(adr)]);
-		aa.add(cmd, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
-	},
-	sound(addess, interval=0xff){
-		if(typeof addess=="object"){addess=abonent.address;}
-		let adr = new Uint8Array([addess, 0x06, 0x00, 0x03, 0x00, interval]); //звук - звук контроллера
-		let data = control.buff_sum([adr, getCRC(adr)]);
-		aa.add(cmd, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
-	},
-	d0(addess, interval=0xff){
-		if(typeof addess=="object"){addess=abonent.address;}
-		let adr = new Uint8Array([addess, 0x06, 0x00, 0x05, 0x00, interval]); //зеленый
-		let data = control.buff_sum([adr, getCRC(adr)]);
-		aa.add(cmd, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
-	},
-	d1(addess, interval=0xff){
-		if(typeof addess=="object"){addess=abonent.address;}
-		let adr = new Uint8Array([addess, 0x06, 0x00, 0x06, 0x00, interval]); //зеленый
-		let data = control.buff_sum([adr, getCRC(adr)]);
-		aa.add(cmd, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
-	},
-	read(addess){
-		if(typeof addess=="object"){addess=abonent.address;}
-		let adr = new Uint8Array([addess, 0x04, 0x00, 0x00, 0x00, 0x05]); //опрос
-		let data = control.buff_sum([adr, getCRC(adr)]);
-		aa.add(scan, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
-	},
-	new_addess(old_adr, new_ard=2){
-		if(typeof old_adr=="object"){old_adr=abonent.address;}
-		let adr = new Uint8Array([old_adr, 0x06, 0x00, 0x10, new_ard, new_ard]); //смена адреса,  - повтор адреса для защиты от ошибок
+	
+	open_lock(network_address){
+		let adr = new Uint8Array([network_address, 0x06, 0x00, 0x04, 0x02, 0x02]); //открытие замка
 		let data = control.buff_sum([adr, getCRC(adr)]);
 		aa.add(gen, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
 	},
-	get_info(network_address){
-		if(typeof network_address=="object"){network_address=abonent.address;}
+	service(network_address){
+		let adr = new Uint8Array([network_address, 0x06, 0x00, 0x10, 0x02, 0x02]); //смена адреса, 0x02, 0x02 - повтор адреса для защиты от ошибок
+		let data = control.buff_sum([adr, getCRC(adr)]);
+		aa.add(gen, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
+	},
+	typical(network_address){
 		let adr = new Uint8Array([network_address, 0x01, 0x00, 0x00, 0x00, 0x05]); //инфо о контроллере
 		let data = control.buff_sum([adr, getCRC(adr)]);
 		aa.add(gen, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
-		let txt="";
-		for(let i in controllers[abonent.address]){
-			if(typeof controllers[abonent.address][i] !='object'){
-				txt=txt+i+" - "+controllers[abonent.address][i]+", ";
-			}
-		}
-		setTimeout(()=>{a_info.innerText=txt;}, 35);
-	},	
+	},
+	
 	recovery(link){ //подключение (выбор) ком порта (канал ввода вывода)
 		let filters = [
 			{ usbVendorId: 8580, usbProductId: 17 }
 		];
 		let settings = {
-			baudRate: 38400,
+			baudRate: 115200,
 			dataBits: 8,
 			stopBits: 1,
 			parity: "none",
@@ -398,77 +318,52 @@ let control={
 			}
 		})();		
 	},
-	finder(data, comment){ //если ответ есть, добавляем адрес в список
+
+	skud(data, comment){
+		pole.innerText=data+"\r\n"+(+new Date()-t_start+ "\r\n"+data.length);
+		t_start=+new Date();
+		//if(0){
+		if(data[0] in controllers){
+			//console.log("skud 1");
+			if(data[4]==0){//ТМ
+				//по адресу находим объект контроллера
+				//в этот объект вставляем экземпляр генератора open_door
+				//если есть карта, добавляем ее номер в объект cards
+				console.log(data[4]);
+				if(0){
+				//if(data[0] in controllers){
+					controllers[data[0]].open_door=open_door(data, comment);
+					controllers[data[0]].open_door.next();
+				}
+			}else{
+				//console.log("new skud");
+				//controllers[data[0]].open_door.next();
+				//aa.next();
+				//this.next();
+			}
+			if(data[4]&0x10){//DOOR	
+			}
+		}
+		aa.next();
+	},
+	finder(data, comment){ //если ответ есть, добавляем адрес в массив
 		if(data[1]){
 			if(!(data[0] in controllers)){
-				controllers[data[0]]={address:data[0]}; //добавляем в список
-				control.get_info(data[0]); //получаем информацию о новом контроллере
+				controllers[data[0]]={address:data[0]};
+				//controllers[data[0]].open_door=return_null();//заглушка
+				//controllers[data[0]].open_door=open_door();
 			} else{
-				if(data[1]==1){//получаем информацию о новом контроллере
-					controllers[data[0]].type=data[3];
-					controllers[data[0]].fw=data[4]+" "+data[5];
-					controllers[data[0]].sn=256*data[10]+data[9];
-					dubl_type_number(data[0], controllers[data[0]].type, controllers[data[0]].sn);//удаляем повторения типа и серийного номера
-					controllers[data[0]].sound=indications(controllers[data[0]], "sound", 300, 700);
-					controllers[data[0]].green=indications(controllers[data[0]], "green", 250, 250);
-					controllers[data[0]].red=indications(controllers[data[0]], "red", 200, 200);
-					controllers[data[0]].red.next();
-					controllers[data[0]].sound.next();
-					controllers[data[0]].green.next();
-					if(data[0]<=1){
-						control.new_addess(data[0], max_addess()); //(old_adr, new_ard)
-					}
-					control.controllers_button(data[0]);
+				if(data[1]==1){
+					controllers[data[0]].type=data[5];
+					controllers[data[0]].fw=data[6]+" "+data[7];
+					controllers[data[0]].sn=data[11]+" "+data[12];
 				}
 			}
-			pole.innerText=data.subarray(0,11);//data;
 		}
 	},
-	controllers_button(num){
-		controllers_area.innerHTML="";
-		for(let i in controllers){
-			let div = document.createElement('div');
-			div.title = controllers[i].sn;
-			div.innerText = i;
-			div.dataset.click="num";
-			controllers_area.append(div);
-			if(i==num){
-				abonent.address=num;
-				div.dataset.chose=1;
-			}
-		}
-	},
-	num(blk){
-		abonent.address=blk.innerText;
-		control.dell_chouse();
-		blk.dataset.chose=1;
-	},
-	dell_chouse(){
-		let list=controllers_area.querySelectorAll('div');
-		for(let i=0; i<list.length; i++){
-			list[i].dataset.chose=0;
-		}
-	}
 };
 
-function max_addess(){
-	let max_i=1;
-	for(let i in controllers){
-		if(max_i<=i){
-			max_i=i;
-		}
-	}
-	return max_i+1;
-}
-function dubl_type_number(adr, type, sn){
-	for(let i in controllers){
-		if(controllers[i].type==type||controllers[i].sn==sn){
-			if(i!=adr){
-				delete controllers[i];
-			}
-		}
-	}
-}
+
 
 function start(){
 	list=document.querySelectorAll('div[data-click]');
@@ -478,11 +373,14 @@ function start(){
 	links.click["recovery"].style.opacity=1;
 }
 
+//let buffer = new Uint8Array([0x02, 0x04, 0x00, 0x00, 0x00, 0x05]);
 function getCRC(buffer){
 	let crc = new Uint16Array([0xffff]);
 	let n = buffer.byteLength;
+	//let crc = 0xffff;
 	let c_summ=0;
 	for(j=0;j<n;j++){
+		//crc ^= *p++;
 		crc=crc^=Number(buffer[j]);
 		for(let i=0;i<8;i++){
 			if(crc&1){
@@ -495,8 +393,9 @@ function getCRC(buffer){
 	}
 	return new Uint8Array(new Uint16Array([crc]).buffer);
 }
+//let msg=control.buff_sum([buffer, getCRC(buffer)]);
+//console.log(msg);
 
-let controllers_area=document.querySelector('div[data-block="controllers"]');
 let link_window_all=document.querySelector('body');
 link_window_all.addEventListener('click', links.call_func);  
 link_window_all.addEventListener("change", links.call_func_chng);

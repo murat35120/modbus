@@ -9,22 +9,52 @@
 <div class='main'>
     <div class='top'>Контроллер Modbus</div>
     <div class='content'>
+		<div class='section' data-block='controllers'>
+	
+		</div>
 		<div class='centre'>
 			<div data-line='Controls'>
 				<div data-click='ask'  title = "отправить запрос" >ASK</div>	
-				<div data-click='find'  title = "сканировать адреса" >FIND</div>	
+				<div data-click='find'  title = "сканировать адреса" >FIND</div>			
+			</div>
+			<div data-line='Controls'>
+				<div data-click='groop'  title = "пакетная команда" >GROOP</div>
+				<div data-click='open_lock'  title = "открыть замок" >OPEN</div>
+				<div data-click='green'  title = "контакт LED" >GREEN</div>
+				<div data-click='red'  title = "контакт ZUMM" >RED</div>	
+				<div data-click='sound'  title = "звук контроллера" >SOUND</div>
+				<div data-click='d0'  title = "D0 на GND" >D0</div>	
+				<div data-click='d1'  title = "D1 на GND" >D1</div>	
+				<div data-click='read'  title = "прочитать состояние" >READ</div>
+				<div data-click='get_info'  title = "получить информацию о контроллере" >INFO</div>
+				<div data-click='new_addess'  title = "изменить сетевой адрес на 2" >ADDR</div>
 			</div>
 			<div data-line='pole'>
 				<div id="pole"></div>
 			</div>
+			<div data-line='pole'>
+				<div>A_DOOR</div>
+				<div id="a_door"></div>
+			</div>
+			<div data-line='pole'>
+				<div>A_LED</div>
+				<div id="a_led"></div>
+			</div>
+			<div data-line='pole'>
+				<div>A_ZP</div>
+				<div id="a_zp"></div>
+			</div>
+			<div data-line='pole'>
+				<div>A_12V</div>
+				<div id="a_12v"></div>
+			</div>
+			<div data-line='pole'>
+				<div>INFO</div>
+				<div id="a_info"></div>
+			</div>
 		</div>
 		<div class='section'>
-			<div data-click='recovery' title = "Выбрать порт"></div>
-			<div data-click='typical'  title = "Информация об адаптере" ></div>	
-			<div data-click='service'  title = "Настройки адаптера" ></div>				
-			<div data-click='clear'  title = "Очистить поле" ></div>
-			<div data-click='get'  title = "Прочитать настройки" ></div>				
-			<div data-click='set'  title = "Записать настройки" ></div>			
+			<div data-click='recovery' title = "Выбрать порт"></div>		
 		</div>
     </div>
 </div>

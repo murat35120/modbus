@@ -1,0 +1,1 @@
+http://10.5.0.2:8080/firmwares/z5r_v3_15_ext.hex?model=0x0A01&serial=1000
