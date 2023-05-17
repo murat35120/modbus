@@ -39,7 +39,7 @@ class MyClass { //задача очереди: создать и добавит�
 		}
 	}
 	add(func,  data, writer, comment="", callback="", type="main") {//функция добавления в очередь	
-		let gen=func.call(this, data, writer, comment);//this, контекст вызова,создаем экземпляр генератора
+		let gen=func.call(this, data, writer, comment);//this, контекст вызова
 		let step={gen, callback};
 		if(type=="main"){ 
 			if(this.done){
@@ -107,7 +107,7 @@ class MyClass { //задача очереди: создать и добавит�
 	}
 }
 
-function *gen(data, writer, comment){ //команда с переходом по получению ответа или по времени
+function *gen(data, writer, comment){ //команда с переходом по времени выводом результата в окно
 	let txt=new Uint8Array(0);
 	this.writer.write(data); //отправляем подготовленное сообщение
 	let timer=setTimeout(()=>{control[writer]( txt, comment); this.next();}, 35); //this.next - метод объекта аа
@@ -117,12 +117,12 @@ function *gen(data, writer, comment){ //команда с переходом п�
 		if(txt[1]==6){
 			if(txt.length>=8){
 				clearTimeout(timer);
-				let timer1=setTimeout(()=>{control[writer]( txt, comment); this.next();}, 2);
+				let timer1=setTimeout(()=>{control[writer]( txt, comment); this.next();}, 5);
 			}
 		}else{
 			if(txt.length>=5+txt[2]){
 				clearTimeout(timer);
-				let timer1=setTimeout(()=>{control[writer]( txt, comment); this.next();}, 2);
+				let timer1=setTimeout(()=>{control[writer]( txt, comment); this.next();}, 5);
 			}
 		}
 		answer = yield;
