@@ -75,33 +75,26 @@ class MyClass { //задача очереди: создать и добавит�
 		if(comment){
 			control.writer(comment); //пишем в окно
 		}
-		if(this.done_fast){
+		if(!this.done_fast){
 			let result=this.iterator_fast.next();
 			this.done_fast=result.done;
 			this.buffer=result.value;
 			if(!this.done_fast){
 				this.buffer.gen.next();
-			}else{
-				this.next_main();
 			}
-		}else{
-			this.next_main();
-		}
-	}
-	next_main(){
-		if(this.done){
+		} else{
 			let result=this.iterator.next();
 			this.done=result.done;
 			this.buffer=result.value;
 			if(!this.done){
 				this.buffer.gen.next();
-			}
-		}else{//обе очереди выполнены
-			if(abonent.ask){//старт нового цикла сканирования
-				control.sk();
-			}
-			if(abonent.find){
-				control.fnd();//старт нового цикла поиска
+			}else{
+				if(abonent.ask){//старт нового цикла сканирования
+					control.sk();
+				}
+				if(abonent.find){
+					control.fnd();//старт нового цикла поиска
+				}
 			}
 		}
 	}
