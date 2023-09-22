@@ -1,0 +1,112 @@
+div{  /* значения по умолчанию */
+    display: flex;  /* включили гибкое форматирование */
+}
+ /*1   */
+div[data-clss="screen"], div[data-id="main"]>div, div[data-id="footer"], div[data-id="loginPass"], div[data-id="blockHeader"], div[data-id="blockIn"]{
+	flex-direction: column; /* направление главнеой оси в ряд*/
+}
+ /*2   */
+div[data-id="header"], div[data-id="headerFoot"]{
+    justify-content: space-around; /* распределение содержимого  по главной оси */ 
+}
+div[data-id="main"], div[data-clss="screen"]{
+    justify-content: space-between; /* распределение содержимого  по главной оси */ 
+}
+div[data-id="offer"], div[data-id="slogan"], div[data-id="blockIn"], div[data-id="buttons"],div[data-id="loginPass"]>div{
+    justify-content: center; /* распределение содержимого  по главной оси */ 
+}
+div[data-id="loginPass"]>div>div{
+    justify-content: end; /* распределение содержимого  по главной оси */ 
+}
+ /*3 */
+div[data-id="main"]>div{
+    align-items:center  ; /* выравнивание в поперечной оси */  
+}
+
+ /*4 */
+div[data-id="main"], div[data-id="article"]{
+    flex-grow: 1;  
+}
+
+div[data-id="article"]{
+    flex-basis: 30em; 
+}
+div[data-id="slogan"], div[data-id="header"]{
+	text-align: center;
+}
+	
+	
+/* ----------------   flax  -------------- */
+div[data-clss="screen"] {
+    width:100%;
+	height:100%;
+    overflow:auto;
+}
+
+/*5 */
+div, input{
+    font-size:  20px;    
+    font-family:  Sans-serif;  
+}
+
+input{
+	opacity:0.5;
+}
+
+div[data-id="header"]{
+    font-size:  3em; 
+}  
+div[data-id="slogan"]{
+    font-family: Cursive; 
+	margin: 0 20px 20px 20px;	
+}
+
+div[data-id="blockIn"]{
+    background-color: rgb(200, 200, 200);    
+}
+
+
+input::placeholder {
+    color: rgb(120, 120, 120);
+    opacity:0.7;	
+}
+div[data-id="loginPass"]>div>input:hover{
+	 opacity:1;
+}
+
+
+div[data-id="loginPass"]>div>input, div[data-id="loginPass"]>div>div{
+    border:none;
+	padding: 5px 20px;
+	margin: 5px 5px;
+	width:6em;
+}
+div[data-id="blockIn"]{
+	margin: auto;
+	padding: 20px;
+	background-color: rgba(230, 230, 230, 0.5);
+	border-radius: 10px;
+}
+
+/*10 animation*/
+
+div[data-click]:hover {
+    background-color: rgb(200, 200, 200);
+}
+div[data-click]{
+    border-style: outset;
+    user-select: none;
+    border-radius: 10px; 
+	padding: 5px 10px;
+	margin:5px;
+}
+div[data-click]:active, div[data-in='1'] {
+    border-style:inset;
+    background-color: rgb(240, 255, 240);
+}
+
+
+body{
+    background: url(fon.jpg) repeat; /* Параметры фона */  
+}
+

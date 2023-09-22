@@ -14,20 +14,24 @@
 		</div>
 		<div class='centre'>
 			<div data-line='Controls'>
-				<div data-click='ask'  title = "отправить запрос" >ASK</div>	
-				<div data-click='find'  title = "сканировать адреса" >FIND</div>			
+				<div data-click='ask'  title = "Отправить запрос" >ASK</div>	
+				<div data-click='find'  title = "Сканировать адреса" >FIND</div>			
 			</div>
 			<div data-line='Controls'>
-				<div data-click='groop'  title = "пакетная команда" >GROOP</div>
-				<div data-click='open_lock'  title = "открыть замок" >OPEN</div>
-				<div data-click='green'  title = "контакт LED" >GREEN</div>
-				<div data-click='red'  title = "контакт ZUMM" >RED</div>	
-				<div data-click='sound'  title = "звук контроллера" >SOUND</div>
-				<div data-click='d0'  title = "D0 на GND" >D0</div>	
-				<div data-click='d1'  title = "D1 на GND" >D1</div>	
-				<div data-click='read'  title = "прочитать состояние" >READ</div>
-				<div data-click='get_info'  title = "получить информацию о контроллере" >INFO</div>
-				<div data-click='new_addess'  title = "изменить сетевой адрес на 2" >ADDR</div>
+				<div data-click='open_lock'  title = "Открыть замок" >OPEN</div>
+				<div data-click='green'  title = "Подать питание на LED" >LED</div>
+				<div data-click='red'  title = "Замкнуть ZUMM на GND" >ZUMM</div>	
+				<div data-click='sound'  title = "Включить звук контроллера" >SOUND</div>
+				<div data-click='d0'  title = "Замкнуть TM на GND" >TM</div>	
+				<div data-click='d1'  title = "Замкнуть EXIT на GND" >EXIT</div>	
+			</div>
+			<div data-line='Controls'>
+				<div data-click='groop'  title = "Пакетная команда" >GROOP</div>			
+				<div data-click='read'  title = "Прочитать состояние" >READ</div>
+				<div data-click='get_info'  title = "Получить информацию о контроллере" >INFO</div>
+				<div data-click='new_addess'  title = "Изменить сетевой адрес" >ADDR</div>
+				<input  type="number" value=2  id="port_num" title = "Новый сетевой адрес" >
+				
 			</div>
 			<div data-line='pole'>
 				<div id="pole"></div>

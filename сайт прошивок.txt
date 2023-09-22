@@ -1,1 +1,5 @@
 http://10.5.0.2:8080/firmwares/z5r_v3_15_ext.hex?model=0x0A01&serial=1000
+
+https://fw.ironlogic.ru/rom/firmwares/z5rn_mod17_115200.hex?model=0x0A01&serial=26536
+
+https://fw.ironlogic.ru/rom/firmwares/z5rn_mod17_38400.hex.hex?model=0x0A01&serial=26536

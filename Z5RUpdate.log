@@ -59,3 +59,85 @@
 26-04-2023 15:11:39 | Upload firmware to S/N=26536
 26-04-2023 15:12:14 | Firmware program successfully completed
 26-04-2023 15:12:22 | ------ Stop program  ------
+12-05-2023 14:20:28 | ------ Start program ------
+12-05-2023 14:20:52 | ------ Stop program  ------
+12-05-2023 14:21:03 | ------ Start program ------
+12-05-2023 14:21:23 | Load image "D:\проект\Modbus\z5rn_mod17_115200(26536-26536).rom"
+12-05-2023 14:21:28 | Upload firmware to S/N=26536
+12-05-2023 14:22:02 | Firmware program successfully completed
+12-05-2023 14:22:16 | ------ Stop program  ------
+12-05-2023 14:47:19 | ------ Start program ------
+12-05-2023 14:47:40 | Load image "D:\проект\Modbus\z5rn_mod17_38400(26536-26536).rom"
+12-05-2023 14:47:46 | Upload firmware to S/N=26536
+12-05-2023 14:48:21 | Firmware program successfully completed
+12-05-2023 14:48:37 | ------ Stop program  ------
+19-05-2023 16:16:50 | ------ Start program ------
+19-05-2023 16:17:00 | Scanning started
+19-05-2023 16:17:00 | Start direct scan...
+19-05-2023 16:17:09 | ------ Stop program  ------
+19-05-2023 16:17:11 | ------ Stop program  ------
+19-05-2023 16:17:15 | Scan breaking!
+19-05-2023 16:17:47 | ------ Start program ------
+19-05-2023 16:17:49 | Scanning started
+19-05-2023 16:17:49 | Start direct scan...
+19-05-2023 16:17:57 | Scan breaking!
+19-05-2023 16:17:58 | ------ Stop program  ------
+19-05-2023 16:18:15 | ------ Start program ------
+19-05-2023 16:18:18 | Scanning started
+19-05-2023 16:18:18 | Start direct scan...
+19-05-2023 16:18:49 | Scan completed.
+19-05-2023 16:18:50 | Scan breaking!
+19-05-2023 16:18:54 | Checking S/N=2
+19-05-2023 16:19:07 | Load image "D:\проект\Modbus\z5rn_mod15_38400.rom"
+19-05-2023 16:19:41 | ------ Stop program  ------
+19-05-2023 16:20:57 | ------ Start program ------
+19-05-2023 16:21:17 | Load image "D:\проект\Modbus\z5rn_mod17_38400(26536-26536).rom"
+19-05-2023 16:21:53 | ------ Stop program  ------
+19-05-2023 16:22:08 | ------ Start program ------
+19-05-2023 16:22:51 | Load image "D:\проект\Modbus\z5rn_mod17_38400(26536-26536).rom"
+19-05-2023 16:22:54 | Upload firmware to S/N=26536
+19-05-2023 16:23:28 | Firmware program successfully completed
+19-05-2023 16:23:36 | ------ Stop program  ------
+15-08-2023 15:27:03 | ------ Start program ------
+15-08-2023 15:27:29 | ------ Stop program  ------
+15-08-2023 15:27:57 | ------ Start program ------
+15-08-2023 15:28:00 | Scanning started
+15-08-2023 15:28:02 | Detect: Type=0x25 NetAddr=2 S/N=24688.
+15-08-2023 15:28:03 | Detect: Type=0x25 NetAddr=3 S/N=26536.
+15-08-2023 15:28:04 | Scan completed.
+15-08-2023 15:28:36 | Load image "D:\проект\Modbus\z5rn_mod17_38400(24688-24688).rom"
+15-08-2023 15:28:54 | Checking S/N=24688
+15-08-2023 15:28:54 | Detect: Type=0x25 NetAddr=2 S/N=24688.
+15-08-2023 15:28:58 | Upload firmware to S/N=24688
+15-08-2023 15:29:33 | Firmware program successfully completed
+15-08-2023 15:29:46 | Network address was successfully changed from 2 to 1.
+15-08-2023 15:30:14 | Checking S/N=26536
+15-08-2023 15:30:14 | Detect: Type=0x25 NetAddr=3 S/N=26536.
+15-08-2023 15:30:29 | ------ Stop program  ------
+15-08-2023 15:30:31 | ------ Start program ------
+15-08-2023 15:30:44 | Checking S/N=26536
+15-08-2023 15:30:44 | Detect: Type=0x25 NetAddr=3 S/N=26536.
+15-08-2023 15:30:54 | Load image "D:\проект\Modbus\z5rn_mod17_38400(26536-26536).rom"
+15-08-2023 15:30:57 | Upload firmware to S/N=26536
+15-08-2023 15:31:32 | Firmware program successfully completed
+15-08-2023 15:33:20 | ------ Stop program  ------
+15-08-2023 15:33:24 | ------ Start program ------
+15-08-2023 15:33:32 | ------ Stop program  ------
+16-08-2023 10:19:39 | ------ Start program ------
+16-08-2023 10:20:19 | Checking S/N=26536
+16-08-2023 10:20:56 | Checking S/N=26536
+16-08-2023 10:21:02 | ------ Stop program  ------
+16-08-2023 10:21:06 | ------ Start program ------
+16-08-2023 10:21:11 | Checking S/N=26536
+16-08-2023 10:21:11 | Detect: Type=0x25 NetAddr=4 S/N=26536.
+16-08-2023 10:21:20 | Load image "D:\проект\Modbus\z5r_v2.21_blk.rom"
+16-08-2023 10:21:22 | Upload firmware to S/N=26536
+16-08-2023 10:21:50 | Firmware program successfully completed
+16-08-2023 10:21:55 | ------ Stop program  ------
+16-08-2023 10:21:56 | ------ Start program ------
+16-08-2023 10:22:02 | Checking S/N=24688
+16-08-2023 10:22:02 | Detect: Type=0x25 NetAddr=2 S/N=24688.
+16-08-2023 10:22:10 | Load image "D:\проект\Modbus\z5r_v2.21_blk.rom"
+16-08-2023 10:22:13 | Upload firmware to S/N=24688
+16-08-2023 10:22:41 | Firmware program successfully completed
+16-08-2023 10:22:45 | ------ Stop program  ------

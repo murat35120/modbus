@@ -135,7 +135,7 @@ function *cmd(data, writer, comment){ //команда с переходом п�
 function *read(data, comment){ //команда обработки событий СКУД
 	if(data){
 		let indication=0;
-		pole.innerText=data.subarray(0,15);//data+"\r\n";
+		pole.innerText=data.subarray(0,11);//data+"\r\n";
 		if(data.length>=17){
 			a_door.innerText=data.subarray(11,12);
 			a_led.innerText=data.subarray(12,13);
@@ -321,7 +321,6 @@ let control={
 		if(typeof addess=="object"){addess=abonent.address;}
 		let adr = new Uint8Array([addess, 0x06, 0x00, 0x02, 0x00, interval]); //красный - контакт ZUMM
 		let data = control.buff_sum([adr, getCRC(adr)]);
-		//console.log(data);
 		aa.add(cmd, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
 	},
 	sound(addess, interval=0xff){
@@ -349,18 +348,15 @@ let control={
 		aa.add(scan, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
 	},
 	new_addess(old_adr, new_ard=2){
-		new_ard=port_num.value;
 		if(typeof old_adr=="object"){old_adr=abonent.address;}
 		let adr = new Uint8Array([old_adr, 0x06, 0x00, 0x10, new_ard, new_ard]); //смена адреса,  - повтор адреса для защиты от ошибок
 		let data = control.buff_sum([adr, getCRC(adr)]);
-		//console.log(data);
 		aa.add(gen, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
 	},
 	get_info(network_address){
 		if(typeof network_address=="object"){network_address=abonent.address;}
 		let adr = new Uint8Array([network_address, 0x01, 0x00, 0x00, 0x00, 0x05]); //инфо о контроллере
 		let data = control.buff_sum([adr, getCRC(adr)]);
-		//console.log(data);
 		aa.add(gen, data, "finder", "info",""); //func,  data, writer, comment, callback) {//функция добавления в очередь
 		let txt="";
 		for(let i in controllers[abonent.address]){
@@ -368,7 +364,7 @@ let control={
 				txt=txt+i+" - "+controllers[abonent.address][i]+", ";
 			}
 		}
-		setTimeout(()=>{a_info.innerText=txt;}, 50);
+		setTimeout(()=>{a_info.innerText=txt;}, 35);
 	},	
 	recovery(link){ //подключение (выбор) ком порта (канал ввода вывода)
 		let filters = [
