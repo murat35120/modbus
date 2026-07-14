@@ -1,0 +1,28 @@
+{
+  "name": "z397-web-manager",
+  "version": "1.0.0",
+  "description": "Native Node.js server for managing Z-397 Web converters (RS485 to Ethernet)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.7.3",
+    "ws": "^8.14.2"
+  },
+  "keywords": [
+    "z397",
+    "rs485",
+    "ethernet",
+    "converter",
+    "modbus",
+    "tcp",
+    "udp"
+  ],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

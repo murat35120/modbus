@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оборудование - Z-397 Менеджер</title>
+    <link rel="stylesheet" href="/public/css/style.css">
+</head>
+<body>
+    <div class="app-container" id="app">
+        
+        <!-- ===== ЛЕВЫЙ БЛОК ===== -->
+        <div class="panel panel-left">
+            <div class="panel-header">
+                <h3>🔍 Оборудование</h3>
+                <div class="udp-control">
+                    <button class="btn-toggle active" id="udpToggle" onclick="toggleUdp()">
+                        Поиск: Вкл
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Серверы -->
+            <div class="list-section">
+                <div class="list-section-title" id="serverTitle">📡 Серверы (0)</div>
+                <div class="list-container" id="serverList">
+                    <div class="list-empty">Нет конвертеров в режиме сервер</div>
+                </div>
+            </div>
+            
+            <!-- Клиенты -->
+            <div class="list-section">
+                <div class="list-section-title" id="clientTitle">🔄 Клиенты (0)</div>
+                <div class="list-container" id="clientList">
+                    <div class="list-empty">Нет конвертеров в режиме клиент</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ===== ЦЕНТРАЛЬНЫЙ БЛОК ===== -->
+        <div class="panel panel-center" id="centerPanel">
+            <div class="info-header">
+                <div>
+                    <div class="info-title" id="infoTitle">Выберите конвертер</div>
+                    <div class="info-subtitle" id="infoSubtitle">Нажмите на конвертер в списке слева</div>
+                </div>
+                <div>
+                    <span class="badge badge-disconnected" id="statusBadge">● Отключен</span>
+                </div>
+            </div>
+            
+            <div class="info-grid" id="infoGrid">
+                <div class="info-item">
+                    <div class="label">Серийный номер</div>
+                    <div class="value" id="snValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">IP адрес</div>
+                    <div class="value" id="ipValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Версия прошивки</div>
+                    <div class="value" id="versionValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Режим</div>
+                    <div class="value" id="modeValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">L1 Порт</div>
+                    <div class="value" id="l1PortValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">L2 Порт</div>
+                    <div class="value" id="l2PortValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">L1 Соединение</div>
+                    <div class="value" id="l1ConnValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">L2 Соединение</div>
+                    <div class="value" id="l2ConnValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Lock</div>
+                    <div class="value" id="lockValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Последнее обновление</div>
+                    <div class="value" id="lastSeenValue">—</div>
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="controls-row">
+                    <select id="speedSelect">
+                        <option value="230400">230400</option>
+                        <option value="115200">115200</option>
+                        <option value="38400" selected>38400</option>
+                        <option value="19200">19200</option>
+                        <option value="9600">9600</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="applySpeed()">Применить скорость</button>
+                    <button class="btn btn-success" id="connectBtn" onclick="toggleConnection()">Подключить</button>
+                    <button class="btn btn-outline" onclick="refreshInfo()">🔄 Обновить</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ===== ПРАВЫЙ БЛОК ===== -->
+        <div class="panel panel-right">
+            <div class="panel-header">
+                <h3>🎮 Контроллеры</h3>
+            </div>
+            <div class="list-container" id="controllerList">
+                <div class="empty-state">
+                    <span class="icon">📡</span>
+                    Подключитесь к конвертеру<br>для сканирования контроллеров
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <script src="/public/js/equipment.js"></script>
+</body>
+</html>

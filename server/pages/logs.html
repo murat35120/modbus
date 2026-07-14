@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лог обмена данными с конвертером</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #111128;
+            padding: 15px 20px;
+            border-bottom: 2px solid #1a1a3e;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .header h2 {
+            color: #e94560;
+            font-size: 1.3em;
+        }
+        .header button {
+            background: #1a1a3e;
+            color: #eee;
+            border: 1px solid #333;
+            padding: 8px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        .header button:hover {
+            background: #2a2a5e;
+            border-color: #e94560;
+        }
+        .header button.active {
+            background: #e94560;
+            border-color: #e94560;
+            color: white;
+        }
+        .header .status {
+            margin-left: auto;
+            font-size: 0.8em;
+            color: #555;
+        }
+        .log-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 20px;
+            background: #0a0a1a;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .log-entry {
+            padding: 4px 10px;
+            margin: 2px 0;
+            border-left: 3px solid transparent;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.6;
+        }
+        .log-entry.info {
+            border-left-color: #2980b9;
+            color: #88d;
+        }
+        .log-entry.success {
+            border-left-color: #00a854;
+            color: #0f0;
+        }
+        .log-entry.error {
+            border-left-color: #e74c3c;
+            color: #f55;
+        }
+        .log-entry.data {
+            border-left-color: #f39c12;
+            color: #da8;
+        }
+        .log-entry .timestamp {
+            color: #555;
+            margin-right: 10px;
+        }
+        .log-entry .direction {
+            display: inline-block;
+            padding: 0 8px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        .log-entry .direction.from-converter {
+            background: #2980b9;
+            color: white;
+        }
+        .log-entry .direction.to-converter {
+            background: #8e44ad;
+            color: white;
+        }
+        .log-entry .bytes {
+            color: #f39c12;
+            font-family: monospace;
+        }
+        .empty-log {
+            text-align: center;
+            color: #555;
+            padding: 50px 0;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1a1a3e;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2a2a5e;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>📋 Лог обмена данными</h2>
+        <button id="btnLogToggle" class="active" onclick="toggleLog()">📝 Лог (вкл)</button>
+        <button id="btnBytesToggle" onclick="toggleBytes()">🔢 Байты (выкл)</button>
+        <button onclick="clearLog()">🗑️ Очистить</button>
+        <button onclick="scrollToBottom()">⬇️ Вниз</button>
+        <span class="status" id="status">Подключение...</span>
+    </div>
+    <div class="log-container" id="logContainer">
+        <div class="empty-log">Лог пуст. Включите логирование для начала работы.</div>
+    </div>
+
+    <script>
+        let ws = null;
+        let logEnabled = true;
+        let showBytes = false;
+        let logEntries = [];
+        let isAtBottom = true;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 10;
+
+        function connectWebSocket() {
+            const wsPort = 8081;
+            const wsUrl = 'ws://localhost:' + wsPort;
+            
+            console.log('🔵 Подключение к WebSocket:', wsUrl);
+            
+            try {
+                ws = new WebSocket(wsUrl);
+            } catch (e) {
+                console.error('❌ Ошибка создания WebSocket:', e);
+                updateStatus('Ошибка: ' + e.message);
+                setTimeout(connectWebSocket, 5000);
+                return;
+            }
+            
+            ws.onopen = function() {
+                console.log('✅ WebSocket подключен (лог)');
+                reconnectAttempts = 0;
+                updateStatus('Подключен');
+                
+                // ОТПРАВЛЯЕМ СТРАНИЦУ
+                ws.send(JSON.stringify({
+                    page: 'logs'
+                }));
+                console.log('📤 Отправлено: { page: "logs" }');
+                
+                getSettings();
+            };
+            
+            ws.onmessage = function(event) {
+                try {
+                    const message = JSON.parse(event.data);
+                    console.log('📨 Получено:', message.type);
+                    handleWsMessage(message);
+                } catch (e) {
+                    console.error('❌ Ошибка обработки:', e);
+                }
+            };
+            
+            ws.onclose = function(event) {
+                console.log('❌ WebSocket закрыт');
+                updateStatus('Отключен');
+                
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    reconnectAttempts++;
+                    const delay = Math.min(3000 * reconnectAttempts, 30000);
+                    console.log('🔄 Переподключение через ' + delay + 'ms (попытка ' + reconnectAttempts + ')');
+                    setTimeout(connectWebSocket, delay);
+                } else {
+                    updateStatus('❌ Не удалось подключиться');
+                }
+            };
+            
+            ws.onerror = function(err) {
+                console.error('❌ WebSocket ошибка:', err);
+            };
+        }
+
+        function handleWsMessage(message) {
+            switch (message.type) {
+                case 'welcome':
+                    console.log('👋 Добро пожаловать! ClientId:', message.clientId);
+                    break;
+                    
+                case 'init':
+                    console.log('📋 Init получен');
+                    break;
+                    
+                case 'log':
+                    console.log('📨 LOG получен:', message.data);
+                    if (logEnabled) {
+                        addLogEntry(message.data);
+                    }
+                    break;
+                    
+                case 'log_settings_update':
+                    console.log('⚙️ Настройки:', message.data);
+                    if (message.data.logEnabled !== undefined) {
+                        logEnabled = message.data.logEnabled;
+                    }
+                    if (message.data.showBytes !== undefined) {
+                        showBytes = message.data.showBytes;
+                    }
+                    updateButtons();
+                    updateStatus(logEnabled ? 'Логирование включено' : 'Логирование выключено');
+                    break;
+                    
+                default:
+                    console.log('❓ Неизвестный тип:', message.type);
+            }
+        }
+
+        function getSettings() {
+            callApi('logs', 'getSettings', {})
+                .then(result => {
+                    if (result.success && result.result) {
+                        logEnabled = result.result.logEnabled !== undefined ? result.result.logEnabled : true;
+                        showBytes = result.result.showBytes || false;
+                        updateButtons();
+                        updateStatus(logEnabled ? 'Логирование включено' : 'Логирование выключено');
+                    }
+                })
+                .catch(err => console.error('❌ Error getting log settings:', err));
+        }
+
+        function callApi(api, cmd, data) {
+            return new Promise((resolve, reject) => {
+                fetch('/api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        api: api,
+                        cmd: cmd,
+                        data: data || {}
+                    })
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.error) {
+                        reject(new Error(result.error));
+                    } else {
+                        resolve(result);
+                    }
+                })
+                .catch(err => reject(err));
+            });
+        }
+
+        function toggleLog() {
+            logEnabled = !logEnabled;
+            const btn = document.getElementById('btnLogToggle');
+            
+            callApi('logs', 'toggleLog', { enabled: logEnabled })
+                .then(() => {
+                    btn.classList.toggle('active');
+                    btn.textContent = logEnabled ? '📝 Лог (вкл)' : '📝 Лог (выкл)';
+                    updateStatus(logEnabled ? 'Логирование включено' : 'Логирование выключено');
+                    
+                    addLogEntry({
+                        timestamp: new Date().toISOString(),
+                        type: 'info',
+                        message: logEnabled ? '✅ Логирование включено' : '⚠️ Логирование отключено'
+                    });
+                })
+                .catch(err => {
+                    console.error('❌ Ошибка переключения лога:', err);
+                    logEnabled = !logEnabled;
+                    updateButtons();
+                });
+        }
+
+        function toggleBytes() {
+            showBytes = !showBytes;
+            const btn = document.getElementById('btnBytesToggle');
+            
+            callApi('logs', 'toggleShowBytes', { show: showBytes })
+                .then(() => {
+                    btn.classList.toggle('active');
+                    btn.textContent = showBytes ? '🔢 Байты (вкл)' : '🔢 Байты (выкл)';
+                    
+                    addLogEntry({
+                        timestamp: new Date().toISOString(),
+                        type: 'info',
+                        message: showBytes ? '🔢 Показ байт включен' : '🔢 Показ байт выключен'
+                    });
+                })
+                .catch(err => {
+                    console.error('❌ Ошибка переключения показа байт:', err);
+                    showBytes = !showBytes;
+                    updateButtons();
+                });
+        }
+
+        function updateButtons() {
+            const logBtn = document.getElementById('btnLogToggle');
+            const bytesBtn = document.getElementById('btnBytesToggle');
+            
+            logBtn.classList.toggle('active', logEnabled);
+            logBtn.textContent = logEnabled ? '📝 Лог (вкл)' : '📝 Лог (выкл)';
+            
+            bytesBtn.classList.toggle('active', showBytes);
+            bytesBtn.textContent = showBytes ? '🔢 Байты (вкл)' : '🔢 Байты (выкл)';
+        }
+
+        function updateStatus(text) {
+            document.getElementById('status').textContent = text;
+        }
+
+        function addLogEntry(entry) {
+            logEntries.push(entry);
+            renderLogEntries();
+            
+            if (isAtBottom) {
+                setTimeout(scrollToBottom, 50);
+            }
+        }
+
+        function renderLogEntries() {
+            const container = document.getElementById('logContainer');
+            
+            if (logEntries.length === 0) {
+                container.innerHTML = '<div class="empty-log">Лог пуст</div>';
+                return;
+            }
+            
+            const entries = logEntries.slice(-1000);
+            let html = '';
+            
+            for (let i = 0; i < entries.length; i++) {
+                const entry = entries[i];
+                let typeClass = 'info';
+                let prefix = '';
+                
+                if (entry.type === 'error') {
+                    typeClass = 'error';
+                    prefix = '❌ ';
+                } else if (entry.type === 'success') {
+                    typeClass = 'success';
+                    prefix = '✅ ';
+                } else if (entry.type === 'data') {
+                    typeClass = 'data';
+                    prefix = '📊 ';
+                }
+                
+                let directionHtml = '';
+                if (entry.direction) {
+                    const dirClass = entry.direction === 'to_converter' ? 'to-converter' : 'from-converter';
+                    const dirText = entry.direction === 'to_converter' ? '→ КОНВ' : '← КОНВ';
+                    directionHtml = '<span class="direction ' + dirClass + '">' + dirText + '</span>';
+                }
+                
+                let bytesHtml = '';
+                if (showBytes && entry.data) {
+                    bytesHtml = '<span class="bytes"> [' + entry.data + ']</span>';
+                }
+                
+                let ipHtml = '';
+                if (entry.ip) {
+                    ipHtml = '<span style="color: #555; margin-right: 8px;">[' + entry.ip + ']</span>';
+                }
+                
+                const timestamp = entry.timestamp ? 
+                    new Date(entry.timestamp).toLocaleTimeString() : 
+                    new Date().toLocaleTimeString();
+                
+                html += '<div class="log-entry ' + typeClass + '">';
+                html += '<span class="timestamp">' + timestamp + '</span>';
+                html += ipHtml;
+                html += directionHtml;
+                html += prefix + (entry.message || '');
+                html += bytesHtml;
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function clearLog() {
+            logEntries = [];
+            renderLogEntries();
+            addLogEntry({
+                timestamp: new Date().toISOString(),
+                type: 'info',
+                message: '🗑️ Лог очищен'
+            });
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('logContainer');
+            container.scrollTop = container.scrollHeight;
+            isAtBottom = true;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('logContainer');
+            container.addEventListener('scroll', function() {
+                const threshold = 100;
+                isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+            });
+        });
+
+        function init() {
+            console.log('🚀 Страница logs загружена');
+            connectWebSocket();
+            
+            setTimeout(function() {
+                addLogEntry({
+                    timestamp: new Date().toISOString(),
+                    type: 'info',
+                    message: '🚀 Лог-сервис запущен'
+                });
+                addLogEntry({
+                    timestamp: new Date().toISOString(),
+                    type: 'info',
+                    message: 'Ожидание данных от конвертеров...'
+                });
+            }, 1000);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

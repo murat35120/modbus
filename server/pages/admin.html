@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление конвертерами</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 0;
+        }
+        .left-panel {
+            width: 40%;
+            background: #111128;
+            border-right: 2px solid #1a1a3e;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+        .right-panel {
+            width: 60%;
+            background: #0a0a1a;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .panel-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .panel-header button {
+            background: #1a1a3e;
+            color: #eee;
+            border: 1px solid #333;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        .panel-header button:hover {
+            background: #2a2a5e;
+            border-color: #e94560;
+        }
+        .panel-header button.active {
+            background: #e94560;
+            border-color: #e94560;
+            color: white;
+        }
+        .converters-list {
+            flex: 1;
+            overflow-y: auto;
+            background: #0a0a1a;
+            border-radius: 8px;
+            padding: 5px;
+        }
+        .converter-item {
+            padding: 10px 15px;
+            margin: 3px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111128;
+            border: 1px solid transparent;
+        }
+        .converter-item:hover {
+            background: #1a1a3e;
+            border-color: #333;
+        }
+        .converter-item.selected {
+            border-color: #e94560;
+            background: #1a1a3e;
+        }
+        .converter-item .ip {
+            font-weight: bold;
+            color: #88d;
+        }
+        .converter-item .status-badge {
+            font-size: 0.7em;
+            padding: 2px 10px;
+            border-radius: 12px;
+            margin-left: 5px;
+        }
+        .status-connected {
+            background: #00a854;
+            color: white;
+        }
+        .status-disconnected {
+            background: #666;
+            color: #ddd;
+        }
+        .status-busy {
+            background: #c0392b;
+            color: white;
+        }
+        .status-client {
+            background: #2980b9;
+            color: white;
+        }
+        .status-deleted {
+            background: #555;
+            color: #999;
+            text-decoration: line-through;
+        }
+        .converter-details {
+            background: #111128;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .converter-details h2 {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .detail-row {
+            display: flex;
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #1a1a3e;
+        }
+        .detail-label {
+            width: 120px;
+            color: #888;
+        }
+        .detail-value {
+            color: #eee;
+            font-weight: 500;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .action-buttons button {
+            padding: 8px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        .btn-connect {
+            background: #00a854;
+            color: white;
+        }
+        .btn-connect:hover {
+            background: #00c96a;
+        }
+        .btn-connect.disconnect {
+            background: #c0392b;
+        }
+        .btn-connect.disconnect:hover {
+            background: #e74c3c;
+        }
+        .btn-info {
+            background: #8e44ad;
+            color: white;
+        }
+        .btn-info:hover {
+            background: #9b59b6;
+        }
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+        .btn-undelete {
+            background: #f39c12;
+            color: white;
+        }
+        .btn-undelete:hover {
+            background: #e67e22;
+        }
+        .info-display {
+            background: #0a0a1a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #88d;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .no-selection {
+            text-align: center;
+            color: #555;
+            padding: 50px 0;
+        }
+        .no-converters {
+            text-align: center;
+            color: #555;
+            padding: 20px 0;
+        }
+        select {
+            background: #1a1a3e;
+            color: #eee;
+            border: 1px solid #333;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        select:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1a1a3e;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2a2a5e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Левая панель - список конвертеров -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <button id="btnUdpSearch" class="active" onclick="toggleUdpSearch()">
+                    🔍 UDP Поиск
+                </button>
+                <button onclick="refreshConverters()">
+                    🔄 Обновить
+                </button>
+                <span style="margin-left: auto; font-size: 0.8em; color: #555;" id="converterCount">0 конвертеров</span>
+            </div>
+            <div class="converters-list" id="convertersList">
+                <div class="no-converters">Поиск конвертеров...</div>
+            </div>
+        </div>
+        
+        <!-- Правая панель - информация о конвертере -->
+        <div class="right-panel" id="rightPanel">
+            <div class="no-selection">
+                <h2>📡 Выберите конвертер</h2>
+                <p style="color: #555; margin-top: 10px;">Нажмите на IP адрес конвертера в списке слева</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let converters = [];
+        let selectedIp = null;
+        let ws = null;
+
+        function connectWebSocket() {
+            const wsPort = 8081;
+            const wsUrl = 'ws://' + window.location.hostname + ':' + wsPort;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function() {
+                console.log('WebSocket подключен');
+            };
+            
+            ws.onmessage = function(event) {
+                try {
+                    const message = JSON.parse(event.data);
+                    handleWsMessage(message);
+                } catch (e) {
+                    console.error('Ошибка обработки WebSocket сообщения:', e);
+                }
+            };
+            
+            ws.onclose = function() {
+                console.log('WebSocket отключен, переподключение через 3 секунды...');
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = function(err) {
+                console.error('WebSocket ошибка:', err);
+            };
+        }
+
+        function handleWsMessage(message) {
+            switch (message.type) {
+                case 'init':
+                    converters = message.data.converters || [];
+                    renderConverters();
+                    updateConverterDetails();
+                    break;
+                case 'converters_update':
+                    converters = message.data || [];
+                    renderConverters();
+                    updateConverterDetails();
+                    break;
+            }
+        }
+
+        function callApi(api, cmd, data) {
+            return new Promise((resolve, reject) => {
+                const payload = {
+                    api: api,
+                    cmd: cmd,
+                    data: data || {}
+                };
+                
+                fetch('/api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.error) {
+                        reject(new Error(result.error));
+                    } else {
+                        resolve(result);
+                    }
+                })
+                .catch(err => {
+                    reject(err);
+                });
+            });
+        }
+
+        function toggleUdpSearch() {
+            const btn = document.getElementById('btnUdpSearch');
+            const isActive = btn.classList.contains('active');
+            
+            callApi('admin', 'toggleUdpSearch', { enabled: !isActive })
+                .then(() => {
+                    btn.classList.toggle('active');
+                    btn.textContent = isActive ? '🔍 UDP Поиск (выкл)' : '🔍 UDP Поиск (вкл)';
+                })
+                .catch(err => {
+                    console.error('Ошибка переключения UDP поиска:', err);
+                });
+        }
+
+        function refreshConverters() {
+            callApi('admin', 'getConverters', {})
+                .then(result => {
+                    if (result.success && result.result) {
+                        converters = result.result;
+                        renderConverters();
+                        updateConverterDetails();
+                    }
+                })
+                .catch(err => {
+                    console.error('Ошибка загрузки конвертеров:', err);
+                });
+        }
+
+        function renderConverters() {
+            const list = document.getElementById('convertersList');
+            const count = document.getElementById('converterCount');
+            
+            if (!converters || converters.length === 0) {
+                list.innerHTML = '<div class="no-converters">Нет доступных конвертеров</div>';
+                count.textContent = '0 конвертеров';
+                return;
+            }
+            
+            count.textContent = converters.length + ' конвертеров';
+            
+            const sorted = [...converters].sort((a, b) => a.ip.localeCompare(b.ip));
+            let html = '';
+            
+            for (let i = 0; i < sorted.length; i++) {
+                const conv = sorted[i];
+                let statusClass = 'status-disconnected';
+                let statusText = 'не активен';
+                
+                if (conv.deleted) {
+                    statusClass = 'status-deleted';
+                    statusText = 'удален';
+                } else if (conv.busy) {
+                    statusClass = 'status-busy';
+                    statusText = 'занят';
+                } else if (conv.connected) {
+                    statusClass = 'status-connected';
+                    statusText = 'подключен';
+                } else if (conv.mode === 'client') {
+                    statusClass = 'status-client';
+                    statusText = 'клиент';
+                }
+                
+                const isSelected = selectedIp === conv.ip;
+                
+                html += '<div class="converter-item ' + (isSelected ? 'selected' : '') + '" onclick="selectConverter(\'' + conv.ip + '\')">';
+                html += '<div>';
+                html += '<span class="ip">' + conv.ip + '</span>';
+                html += '<span class="status-badge ' + statusClass + '">' + statusText + '</span>';
+                if (conv.serialNumber) {
+                    html += '<span style="font-size: 0.7em; color: #666; margin-left: 5px;">#' + conv.serialNumber + '</span>';
+                }
+                html += '</div>';
+                html += '<div style="font-size: 0.7em; color: #555;">';
+                html += conv.mode === 'client' ? '🔄 клиент' : '🖥️ сервер';
+                if (conv.speed) {
+                    html += ' | ' + conv.speed + ' bps';
+                }
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            list.innerHTML = html;
+        }
+
+        function selectConverter(ip) {
+            selectedIp = ip;
+            renderConverters();
+            updateConverterDetails();
+        }
+
+        function updateConverterDetails() {
+            const panel = document.getElementById('rightPanel');
+            
+            if (!selectedIp) {
+                panel.innerHTML = '<div class="no-selection"><h2>📡 Выберите конвертер</h2><p style="color: #555; margin-top: 10px;">Нажмите на IP адрес конвертера в списке слева</p></div>';
+                return;
+            }
+            
+            const converter = converters.find(c => c.ip === selectedIp);
+            if (!converter) {
+                panel.innerHTML = '<div class="no-selection"><h2>❌ Конвертер не найден</h2><p style="color: #555; margin-top: 10px;">Конвертер с IP ' + selectedIp + ' не найден</p></div>';
+                selectedIp = null;
+                return;
+            }
+            
+            const isConnected = converter.connected && !converter.deleted;
+            const isDeleted = converter.deleted;
+            const isBusy = converter.busy && !isConnected;
+            
+            let html = '<div class="converter-details">';
+            html += '<h2>📟 ' + converter.ip + '</h2>';
+            
+            html += '<div class="detail-row"><span class="detail-label">Модель:</span><span class="detail-value">' + (converter.model || 'Z397-WEB') + '</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">Серийный номер:</span><span class="detail-value">' + (converter.serialNumber || 'неизвестен') + '</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">Версия прошивки:</span><span class="detail-value">' + (converter.version || 'неизвестна') + '</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">Режим работы:</span><span class="detail-value">' + (converter.mode === 'client' ? 'Клиент' : 'Сервер') + '</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">Статус:</span><span class="detail-value">' + (isDeleted ? 'Удален' : isBusy ? 'Занят' : isConnected ? '✅ Подключен' : '❌ Не подключен') + '</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">Скорость:</span><span class="detail-value">' + (converter.speed || 230400) + ' bps</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">L1 Порт:</span><span class="detail-value">' + (converter.L1_Port || '1000') + '</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">L2 Порт:</span><span class="detail-value">' + (converter.L2_Port || '1001') + '</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">L1 Соединение:</span><span class="detail-value">' + (converter.L1_Conn || '0.0.0.0') + '</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">L2 Соединение:</span><span class="detail-value">' + (converter.L2_Conn || '0.0.0.0') + '</span></div>';
+            html += '<div class="detail-row"><span class="detail-label">Lock:</span><span class="detail-value">' + (converter.Lock === '1' ? '🔒 Заблокирован' : '🔓 Разблокирован') + '</span></div>';
+            
+            html += '<div class="action-buttons">';
+            
+            if (!isDeleted) {
+                html += '<button class="btn-connect ' + (isConnected ? 'disconnect' : '') + '" onclick="' + (isConnected ? 'disconnectConverter' : 'connectConverter') + '(\'' + converter.ip + '\')">';
+                html += isConnected ? '🔌 Отключить' : '🔗 Подключить';
+                html += '</button>';
+                
+                if (isConnected) {
+                    html += '<select id="speedSelect" onchange="changeSpeed(\'' + converter.ip + '\')">';
+                    html += '<option value="230400" ' + (converter.speed === 230400 ? 'selected' : '') + '>230400 bps</option>';
+                    html += '<option value="115200" ' + (converter.speed === 115200 ? 'selected' : '') + '>115200 bps</option>';
+                    html += '<option value="38400" ' + (converter.speed === 38400 ? 'selected' : '') + '>38400 bps</option>';
+                    html += '<option value="9600" ' + (converter.speed === 9600 ? 'selected' : '') + '>9600 bps</option>';
+                    html += '</select>';
+                    html += '<button class="btn-info" onclick="getInfo(\'' + converter.ip + '\')">ℹ️ Информация</button>';
+                }
+                
+                html += '<button class="btn-delete" onclick="deleteConverter(\'' + converter.ip + '\')">🗑️ Удалить</button>';
+            } else {
+                html += '<button class="btn-undelete" onclick="undeleteConverter(\'' + converter.ip + '\')">↩️ Восстановить</button>';
+            }
+            
+            html += '</div>';
+            
+            if (isConnected) {
+                html += '<div class="info-display" id="infoDisplay">Здесь будет отображаться информация от конвертера</div>';
+            }
+            
+            html += '</div>';
+            panel.innerHTML = html;
+        }
+
+        function connectConverter(ip) {
+            callApi('admin', 'connect', { ip: ip })
+                .then(() => refreshConverters())
+                .catch(err => console.error('Ошибка подключения:', err.message));
+        }
+
+        function disconnectConverter(ip) {
+            callApi('admin', 'disconnect', { ip: ip })
+                .then(() => refreshConverters())
+                .catch(err => console.error('Ошибка отключения:', err.message));
+        }
+
+        function changeSpeed(ip) {
+            const select = document.getElementById('speedSelect');
+            if (!select) return;
+            const speed = parseInt(select.value);
+            
+            callApi('admin', 'setSpeed', { ip: ip, speed: speed })
+                .then(() => refreshConverters())
+                .catch(err => console.error('Ошибка установки скорости:', err.message));
+        }
+
+        function getInfo(ip) {
+            callApi('admin', 'getInfo', { ip: ip })
+                .then(result => {
+                    if (result.success) {
+                        const display = document.getElementById('infoDisplay');
+                        if (display) {
+                            display.innerHTML = '✅ Информация получена\n\n' + (result.data || 'Нет данных');
+                        }
+                    }
+                })
+                .catch(err => console.error('Ошибка получения информации:', err.message));
+        }
+
+        function deleteConverter(ip) {
+            callApi('admin', 'deleteConverter', { ip: ip })
+                .then(() => {
+                    refreshConverters();
+                    selectedIp = null;
+                    updateConverterDetails();
+                })
+                .catch(err => console.error('Ошибка удаления:', err.message));
+        }
+
+        function undeleteConverter(ip) {
+            callApi('admin', 'connect', { ip: ip })
+                .then(() => refreshConverters())
+                .catch(err => console.error('Ошибка восстановления:', err.message));
+        }
+
+        function init() {
+            connectWebSocket();
+            refreshConverters();
+            setInterval(refreshConverters, 10000);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

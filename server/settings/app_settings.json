@@ -1,0 +1,11 @@
+{
+  "udpSearchEnabled": false,
+  "logEnabled": true,
+  "showBytes": true,
+  "selectedConverters": {
+    "192.168.1.89": {
+      "speed": 230400,
+      "autoReconnect": true
+    }
+  }
+}

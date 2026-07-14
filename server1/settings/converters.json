@@ -1,0 +1,32 @@
+[
+  {
+    "serialNumber": "48",
+    "ip": "192.168.1.89",
+    "model": "Z397-WEB",
+    "version": "unknown",
+    "mode": "server",
+    "L1_Port": "1000",
+    "L2_Port": "1001",
+    "L1_Conn": "192.168.1.61",
+    "L2_Conn": "192.168.1.61",
+    "Lock": "0",
+    "workingSpeed": 38400,
+    "autoReconnect": true,
+    "deleted": false
+  },
+  {
+    "serialNumber": "48424",
+    "ip": "192.168.1.89",
+    "model": "Z397-WEB",
+    "version": "4.0.13",
+    "mode": "server",
+    "L1_Port": "1000",
+    "L2_Port": "1001",
+    "L1_Conn": "192.168.1.61",
+    "L2_Conn": "192.168.1.61",
+    "Lock": "0",
+    "workingSpeed": 38400,
+    "autoReconnect": true,
+    "deleted": false
+  }
+]

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z-397 WEB Конвертер Менеджер</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #e94560;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+        .pages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .page-card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: #eee;
+            border: 1px solid #0f3460;
+        }
+        .page-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-color: #e94560;
+            background: #1a2a5e;
+        }
+        .page-card h2 {
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+        .page-card p {
+            color: #aaa;
+            line-height: 1.6;
+        }
+        .page-card .badge {
+            display: inline-block;
+            background: #0f3460;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-top: 10px;
+            color: #88d;
+        }
+        .refresh-btn {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+        .refresh-btn:hover {
+            background: #c73e54;
+            transform: scale(1.05);
+        }
+        .status {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #444;
+            border-top: 1px solid #222;
+            padding-top: 20px;
+        }
+        .loader {
+            text-align: center;
+            color: #666;
+            grid-column: 1/-1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Z-397 WEB Конвертер Менеджер</h1>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button class="refresh-btn" onclick="refreshPages()">🔄 Обновить список страниц</button>
+        </div>
+        
+        <div id="pages-container">
+            <div class="pages-grid" id="pages-grid">
+                <div class="loader">Загрузка страниц...</div>
+            </div>
+        </div>
+        
+        <div class="status" id="status">Загрузка...</div>
+        
+        <div class="footer">
+            Z-397 WEB Manager v1.0 | Node.js серверное приложение
+        </div>
+    </div>
+
+    <script>
+        async function loadPages() {
+            try {
+                const response = await fetch('/pages/list.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load pages list');
+                }
+                const pages = await response.json();
+                renderPages(pages);
+                document.getElementById('status').textContent = 'Загружено ' + pages.length + ' страниц';
+            } catch (e) {
+                console.error('Error loading pages:', e);
+                document.getElementById('status').textContent = 'Ошибка загрузки списка страниц';
+                document.getElementById('pages-grid').innerHTML = '<div style="text-align: center; color: #e94560; grid-column: 1/-1;">Ошибка: ' + e.message + '</div>';
+            }
+        }
+        
+        async function refreshPages() {
+            const grid = document.getElementById('pages-grid');
+            const status = document.getElementById('status');
+            
+            status.textContent = 'Обновление...';
+            grid.innerHTML = '<div class="loader">Обновление списка страниц...</div>';
+            
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        api: 'system',
+                        cmd: 'generatePagesList',
+                        data: {}
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    await loadPages();
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (e) {
+                console.error('Error generating pages list:', e);
+                status.textContent = 'Ошибка обновления: ' + e.message;
+                await loadPages();
+            }
+        }
+        
+        function renderPages(pages) {
+            const grid = document.getElementById('pages-grid');
+            
+            if (!pages || pages.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; color: #666; grid-column: 1/-1;">Нет доступных страниц</div>';
+                return;
+            }
+            
+            let html = '';
+            for (let i = 0; i < pages.length; i++) {
+                const page = pages[i];
+                html += '<a href="/pages/' + page.file + '" class="page-card">';
+                html += '<h2>' + (page.title || page.name) + '</h2>';
+                html += '<p>' + (page.description || 'Нет описания') + '</p>';
+                html += '<div class="badge">' + page.name + '</div>';
+                html += '</a>';
+            }
+            grid.innerHTML = html;
+        }
+        
+        // Загрузка страниц при открытии
+        loadPages();
+        
+        // Обновление каждые 30 секунд
+        setInterval(loadPages, 30000);
+    </script>
+</body>
+</html>

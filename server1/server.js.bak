@@ -1,0 +1,1304 @@
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const url = require('url');
+const net = require('net');
+
+// Модули
+const Converter = require('./modules/converter');
+const ConverterFinder = require('./modules/converterFinder');
+const PageGenerator = require('./modules/pageGenerator');
+const ApiModule = require('./modules/api');
+
+// Конфигурация
+const CONFIG = {
+    httpPort: 8080,
+    tcpPort: 1000,
+    udpPort: 9000
+};
+
+// Пути
+const PATHS = {
+    modules: path.join(__dirname, 'modules'),
+    pages: path.join(__dirname, 'pages'),
+    public: path.join(__dirname, 'public'),
+    settings: path.join(__dirname, 'settings')
+};
+
+// Создание необходимых папок
+Object.values(PATHS).forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+});
+
+// Состояние приложения
+const state = {
+    settings: {
+        udpSearchEnabled: true,
+        logEnabled: false,
+        showBytes: false
+    },
+    converters: new Map() // key: serialNumber, value: Converter
+};
+
+// Загрузка настроек
+function loadSettings() {
+    const settingsFile = path.join(PATHS.settings, 'app_settings.json');
+    if (fs.existsSync(settingsFile)) {
+        try {
+            const data = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+            state.settings = { ...state.settings, ...data };
+        } catch (e) {
+            console.error('Error loading settings:', e);
+        }
+    }
+}
+
+// Сохранение настроек
+function saveSettings() {
+    const settingsFile = path.join(PATHS.settings, 'app_settings.json');
+    try {
+        fs.writeFileSync(settingsFile, JSON.stringify(state.settings, null, 2));
+    } catch (e) {
+        console.error('Error saving settings:', e);
+    }
+}
+
+// Загрузка конвертеров
+function loadConverters() {
+    const convertersFile = path.join(PATHS.settings, 'converters.json');
+    if (fs.existsSync(convertersFile)) {
+        try {
+            const data = JSON.parse(fs.readFileSync(convertersFile, 'utf8'));
+            data.forEach(convData => {
+                const converter = new Converter(convData);
+                state.converters.set(convData.serialNumber, converter);
+            });
+        } catch (e) {
+            console.error('Error loading converters:', e);
+        }
+    }
+}
+
+// Сохранение конвертеров
+function saveConverters() {
+    const convertersFile = path.join(PATHS.settings, 'converters.json');
+    try {
+        const data = Array.from(state.converters.values()).map(c => ({
+            serialNumber: c.serialNumber,
+            ip: c.ip,
+            model: c.model,
+            version: c.version,
+            mode: c.mode,
+            L1_Port: c.L1_Port,
+            L2_Port: c.L2_Port,
+            L1_Conn: c.L1_Conn,
+            L2_Conn: c.L2_Conn,
+            Lock: c.Lock,
+            workingSpeed: c.workingSpeed,
+            autoReconnect: c.autoReconnect,
+            deleted: c.deleted
+        }));
+        fs.writeFileSync(convertersFile, JSON.stringify(data, null, 2));
+    } catch (e) {
+        console.error('Error saving converters:', e);
+    }
+}
+
+// Менеджер конвертеров
+const converterManager = {
+    addConverter(converter) {
+        state.converters.set(converter.serialNumber, converter);
+        saveConverters();
+        this.notifyListeners();
+    },
+    
+    getConverter(serialNumber) {
+        return state.converters.get(serialNumber);
+    },
+    
+    getAllConverters() {
+        return Array.from(state.converters.values());
+    },
+    
+    removeConverter(serialNumber) {
+        const converter = state.converters.get(serialNumber);
+        if (converter) {
+            converter.disconnect();
+            state.converters.delete(serialNumber);
+            saveConverters();
+            this.notifyListeners();
+            return true;
+        }
+        return false;
+    },
+    
+    notifyListeners() {
+        // Уведомляем всех подписчиков через API
+        // Можно реализовать через EventEmitter
+    }
+};
+
+// Инициализация модулей
+loadSettings();
+loadConverters();
+
+const pageGenerator = new PageGenerator(PATHS.pages, PATHS.public);
+const converterFinder = new ConverterFinder(converterManager);
+const apiModule = new ApiModule({
+    converterFinder: converterFinder,
+    state: state,
+    saveSettings: saveSettings,
+    saveConverters: saveConverters,
+    loadSettings: loadSettings,
+    loadConverters: loadConverters
+});
+
+// Настройка поиска конвертеров
+converterFinder.onConverterFound = (converter) => {
+    // Обновляем информацию о конвертере
+    saveConverters();
+};
+
+converterFinder.onSearchStatusChanged = (isSearching) => {
+    state.settings.udpSearchEnabled = isSearching;
+    saveSettings();
+};
+
+// Запуск UDP поиска
+converterFinder.start();
+
+// === TCP Сервер для клиентов ===
+const tcpServer = net.createServer((socket) => {
+    const clientAddress = socket.remoteAddress;
+    console.log(`TCP клиент подключен: ${clientAddress}`);
+    
+    // Ищем конвертер по IP
+    let converter = null;
+    for (const [sn, conv] of state.converters) {
+        if (conv.ip === clientAddress && conv.mode === 'client') {
+            converter = conv;
+            break;
+        }
+    }
+    
+    if (!converter) {
+        // Новый конвертер в режиме клиента
+        const config = {
+            ip: clientAddress,
+            mode: 'client',
+            serialNumber: `SN_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            model: 'Z397-WEB',
+            version: 'unknown',
+            workingSpeed: 38400,
+            autoReconnect: true
+        };
+        converter = new Converter(config);
+        converterManager.addConverter(converter);
+    }
+    
+    // Назначаем сокет конвертеру
+    converter.socket = socket;
+    converter.connected = true;
+    converter.lastSeen = Date.now();
+    converter._setupSocketEvents();
+    
+    // Автоматически переключаем на 230400 для получения информации
+    converter._setSpeed(230400)
+        .then(() => converter._getInfo())
+        .then((info) => {
+            // Если получили SN, обновляем ключ
+            if (info.serialNumber) {
+                // Перемещаем конвертер в Map с новым ключом
+                const oldSn = converter.serialNumber;
+                converter.serialNumber = info.serialNumber;
+                state.converters.delete(oldSn);
+                state.converters.set(info.serialNumber, converter);
+                saveConverters();
+            }
+            // Переключаем на рабочую скорость
+            return converter._setSpeed(converter.workingSpeed);
+        })
+        .catch((error) => {
+            console.error(`Ошибка настройки клиента ${clientAddress}:`, error);
+        });
+    
+    socket.on('data', (data) => {
+        // Передаем данные конвертеру
+        converter.emit('data', data);
+    });
+    
+    socket.on('close', () => {
+        console.log(`TCP клиент отключен: ${clientAddress}`);
+        converter.connected = false;
+        converter.socket = null;
+    });
+});
+
+tcpServer.listen(CONFIG.tcpPort, '0.0.0.0', () => {
+    console.log(`TCP сервер запущен на порту ${CONFIG.tcpPort}`);
+});
+
+// === HTTP Сервер ===
+const httpServer = http.createServer((req, res) => {
+    const parsedUrl = url.parse(req.url, true);
+    const pathname = parsedUrl.pathname;
+    
+    // CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (req.method === 'OPTIONS') {
+        res.writeHead(200);
+        res.end();
+        return;
+    }
+    
+    // API
+    if (pathname === '/api' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                handleApiRequest(data, res);
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON' }));
+            }
+        });
+        return;
+    }
+    
+    // Главная страница
+    if (pathname === '/' || pathname === '/index.html') {
+        const indexPath = path.join(PATHS.public, 'index.html');
+        if (fs.existsSync(indexPath)) {
+            serveFile(indexPath, res);
+        } else {
+            // Генерируем страницу
+            pageGenerator.generate();
+            serveFile(indexPath, res);
+        }
+        return;
+    }
+    
+    // Страницы
+    if (pathname.startsWith('/pages/')) {
+        const filePath = path.join(PATHS.pages, pathname.replace('/pages/', ''));
+        serveFile(filePath, res);
+        return;
+    }
+    
+    // Публичные файлы
+    if (pathname.startsWith('/public/')) {
+        const filePath = path.join(PATHS.public, pathname.replace('/public/', ''));
+        serveFile(filePath, res);
+        return;
+    }
+    
+    // 404
+    res.writeHead(404);
+    res.end('Not Found');
+});
+
+function serveFile(filePath, res) {
+    if (!fs.existsSync(filePath)) {
+        res.writeHead(404);
+        res.end('File not found');
+        return;
+    }
+    
+    const content = fs.readFileSync(filePath);
+    const ext = path.extname(filePath);
+    let contentType = 'text/html';
+    
+    switch (ext) {
+        case '.js': contentType = 'application/javascript'; break;
+        case '.css': contentType = 'text/css'; break;
+        case '.json': contentType = 'application/json'; break;
+        case '.png': contentType = 'image/png'; break;
+        case '.jpg':
+        case '.jpeg':
+            contentType = 'image/jpeg';
+            break;
+        case '.svg':
+            contentType = 'image/svg+xml';
+            break;
+    }
+    
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(content);
+}
+
+async function handleApiRequest(data, res) {
+    const { api, cmd, data: params } = data;
+    
+    if (!api || !cmd) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing api or cmd' }));
+        return;
+    }
+    
+    try {
+        const result = await apiModule.execute(api, cmd, params || {});
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: true,
+            api: api,
+            cmd: cmd,
+            result: result
+        }));
+    } catch (e) {
+        console.error(`API Error (${api}.${cmd}):`, e);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: false,
+            api: api,
+            cmd: cmd,
+            error: e.message
+        }));
+    }
+}
+
+// === Функции для вывода адресов ===
+function getLocalIPs() {
+    const interfaces = os.networkInterfaces();
+    const ips = [];
+    
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                ips.push({
+                    address: iface.address,
+                    name: name,
+                    family: 'IPv4'
+                });
+            }
+        }
+    }
+    
+    return ips;
+}
+
+// === Запуск ===
+httpServer.listen(CONFIG.httpPort, '0.0.0.0', () => {
+    console.log('\n========================================');
+    console.log('🚀 Z-397 Конвертер Менеджер');
+    console.log('========================================\n');
+    
+    const ips = getLocalIPs();
+    console.log('🌐 HTTP сервер запущен на порту', CONFIG.httpPort);
+    console.log('\n📡 Доступные адреса:');
+    
+    if (ips.length === 0) {
+        console.log('  http://localhost:' + CONFIG.httpPort);
+    } else {
+        ips.forEach(ip => {
+            console.log(`  http://${ip.address}:${CONFIG.httpPort} (${ip.name})`);
+        });
+        console.log(`  http://localhost:${CONFIG.httpPort} (localhost)`);
+    }
+    
+    console.log('\n🔧 Модули:');
+    console.log(`  📄 Генератор страниц: ${pageGenerator.pages.length} страниц`);
+    console.log(`  🔍 Поиск конвертеров: ${converterFinder.getStatus() ? 'активен' : 'остановлен'}`);
+    console.log(`  🔗 Конвертеров в базе: ${state.converters.size}`);
+    
+    console.log('\n📋 API команды:');
+    console.log('  converter: list, get, connect, disconnect, delete, setSpeed, getState');
+    console.log('  server: status, settings, updateSettings');
+    console.log('  controller: list (заглушка)');
+    
+    console.log('\n========================================');
+    console.log('Нажмите Ctrl+C для остановки');
+});
+
+// === Обработка завершения ===
+process.on('SIGINT', () => {
+    console.log('\n\n⏹ Остановка приложения...');
+    
+    // Останавливаем поиск
+    converterFinder.stop();
+    
+    // Отключаем все конвертеры
+    for (const [sn, converter] of state.converters) {
+        converter.disconnect();
+    }
+    
+    // Сохраняем настройки
+    saveSettings();
+    saveConverters();
+    
+    // Закрываем серверы
+    httpServer.close();
+    tcpServer.close();
+    
+    console.log('✅ Приложение остановлено');
+    process.exit(0);
+});
+
+// === Генерация страницы оборудования ===
+function generateEquipmentPage() {
+    const html = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оборудование - Z-397 Менеджер</title>
+    <!-- icon: 🔌 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        /* Левый блок */
+        .left-panel {
+            flex: 0 0 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .panel-header h3 {
+            font-size: 14px;
+            color: #374151;
+            font-weight: 600;
+        }
+        
+        .udp-control {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .btn-toggle {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-toggle.active {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-toggle.inactive {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .converter-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        
+        .converter-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .converter-list::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 2px;
+        }
+        
+        .converter-item {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            background: #f9fafb;
+        }
+        
+        .converter-item:hover {
+            background: #f3f4f6;
+        }
+        
+        .converter-item.selected {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+        
+        .converter-item .name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+        
+        .converter-item .ip {
+            font-size: 11px;
+            color: #6b7280;
+        }
+        
+        .converter-item .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        
+        .badge.connected {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge.disconnected {
+            background: #fecaca;
+            color: #991b1b;
+        }
+        
+        .badge.busy {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge.server {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge.client {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+        
+        .badge.deleted {
+            background: #f3f4f6;
+            color: #6b7280;
+            text-decoration: line-through;
+        }
+        
+        .list-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .list-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            padding: 4px 0 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 8px;
+        }
+        
+        /* Центральный блок */
+        .center-panel {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .center-panel .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .center-panel .info-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .center-panel .info-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        
+        .info-item {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        
+        .info-item .label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-item .value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+            margin-top: 4px;
+        }
+        
+        .controls-section {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 2px solid #e5e7eb;
+        }
+        
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .controls-row select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            min-width: 120px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #d1d5db;
+            color: #374151;
+        }
+        
+        .btn-outline:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Правый блок */
+        .right-panel {
+            flex: 0 0 280px;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .right-panel .panel-header {
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 12px;
+        }
+        
+        .controller-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .controller-item {
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            background: #f9fafb;
+            font-size: 13px;
+            color: #374151;
+        }
+        
+        .controller-item .address {
+            font-size: 11px;
+            color: #6b7280;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #9ca3af;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+        
+        .empty-state .icon {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 1200px) {
+            .app-container {
+                flex-direction: column;
+                height: auto;
+                overflow-y: auto;
+            }
+            
+            .left-panel,
+            .right-panel {
+                flex: none;
+                height: 300px;
+            }
+            
+            .center-panel {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="app">
+        <!-- Левый блок -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <h3>🔍 Оборудование</h3>
+                <div class="udp-control">
+                    <button class="btn-toggle active" id="udpToggle" onclick="toggleUdp()">
+                        Поиск: Вкл
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Конвертеры сервер -->
+            <div class="list-section">
+                <div class="list-section-title">📡 Серверы (${serverConverters.length})</div>
+                <div class="converter-list" id="serverList">
+                    ${serverConverters.map(c => renderConverterItem(c)).join('')}
+                </div>
+            </div>
+            
+            <!-- Конвертеры клиент -->
+            <div class="list-section">
+                <div class="list-section-title">🔄 Клиенты (${clientConverters.length})</div>
+                <div class="converter-list" id="clientList">
+                    ${clientConverters.map(c => renderConverterItem(c)).join('')}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Центральный блок -->
+        <div class="center-panel" id="centerPanel">
+            <div class="info-header">
+                <div>
+                    <div class="info-title" id="infoTitle">Выберите конвертер</div>
+                    <div class="info-subtitle" id="infoSubtitle">Нажмите на конвертер в списке слева</div>
+                </div>
+                <div>
+                    <span class="badge" id="statusBadge">● Ожидание</span>
+                </div>
+            </div>
+            
+            <div class="info-grid" id="infoGrid">
+                <div class="info-item">
+                    <div class="label">Серийный номер</div>
+                    <div class="value" id="snValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">IP адрес</div>
+                    <div class="value" id="ipValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Версия прошивки</div>
+                    <div class="value" id="versionValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Режим</div>
+                    <div class="value" id="modeValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">L1 Порт</div>
+                    <div class="value" id="l1PortValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">L2 Порт</div>
+                    <div class="value" id="l2PortValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">L1 Соединение</div>
+                    <div class="value" id="l1ConnValue">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">L2 Соединение</div>
+                    <div class="value" id="l2ConnValue">—</div>
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="controls-row">
+                    <select id="speedSelect">
+                        <option value="230400">230400</option>
+                        <option value="115200">115200</option>
+                        <option value="38400" selected>38400</option>
+                        <option value="19200">19200</option>
+                        <option value="9600">9600</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="applySpeed()">Применить скорость</button>
+                    <button class="btn btn-success" id="connectBtn" onclick="toggleConnection()">Подключить</button>
+                    <button class="btn btn-danger" onclick="deleteConverter()">🗑 Удалить</button>
+                    <button class="btn btn-outline" onclick="refreshInfo()">🔄 Обновить</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Правый блок -->
+        <div class="right-panel">
+            <div class="panel-header">
+                <h3>🎮 Контроллеры</h3>
+            </div>
+            <div class="controller-list" id="controllerList">
+                <div class="empty-state">
+                    <span class="icon">📡</span>
+                    Подключитесь к конвертеру<br>для сканирования контроллеров
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let selectedConverter = null;
+        let converters = [];
+        let isConnected = false;
+        
+        // Рендер элемента конвертера
+        function renderConverterItem(converter) {
+            const statusClass = converter.connected ? 'connected' : 'disconnected';
+            const modeClass = converter.mode === 'server' ? 'server' : 'client';
+            const busyClass = converter.busy ? 'busy' : '';
+            const deletedClass = converter.deleted ? 'deleted' : '';
+            
+            return \`
+                <div class="converter-item \${selectedConverter === converter.serialNumber ? 'selected' : ''}" 
+                     onclick="selectConverter('\${converter.serialNumber}')"
+                     data-sn="\${converter.serialNumber}">
+                    <div class="name">\${converter.model} \${converter.serialNumber}</div>
+                    <div class="ip">\${converter.ip}</div>
+                    <span class="badge \${statusClass}">\${converter.connected ? '● Подключен' : '○ Отключен'}</span>
+                    <span class="badge \${modeClass}">\${converter.mode === 'server' ? '📡 Сервер' : '🔄 Клиент'}</span>
+                    \${converter.busy ? '<span class="badge busy">🔒 Занят</span>' : ''}
+                    \${converter.deleted ? '<span class="badge deleted">🗑 Удален</span>' : ''}
+                </div>
+            \`;
+        }
+        
+        // Выбор конвертера
+        function selectConverter(serialNumber) {
+            selectedConverter = serialNumber;
+            updateUI();
+            loadConverterInfo(serialNumber);
+        }
+        
+        // Загрузка информации о конвертере
+        async function loadConverterInfo(serialNumber) {
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api: 'converter',
+                        cmd: 'get',
+                        data: { serialNumber }
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    updateInfoPanel(data.result);
+                    updateControllerList(data.result);
+                }
+            } catch (error) {
+                console.error('Error loading converter info:', error);
+            }
+        }
+        
+        // Обновление панели информации
+        function updateInfoPanel(converter) {
+            document.getElementById('infoTitle').textContent = \`\${converter.model} \${converter.serialNumber}\`;
+            document.getElementById('infoSubtitle').textContent = \`Последнее обновление: \${new Date(converter.lastSeen).toLocaleString()}\`;
+            
+            document.getElementById('snValue').textContent = converter.serialNumber || '—';
+            document.getElementById('ipValue').textContent = converter.ip || '—';
+            document.getElementById('versionValue').textContent = converter.version || '—';
+            document.getElementById('modeValue').textContent = converter.mode === 'server' ? 'Сервер' : 'Клиент';
+            document.getElementById('l1PortValue').textContent = converter.L1_Port || '—';
+            document.getElementById('l2PortValue').textContent = converter.L2_Port || '—';
+            document.getElementById('l1ConnValue').textContent = converter.L1_Conn || '—';
+            document.getElementById('l2ConnValue').textContent = converter.L2_Conn || '—';
+            
+            const badge = document.getElementById('statusBadge');
+            if (converter.connected) {
+                badge.textContent = '● Подключен';
+                badge.style.color = '#10b981';
+            } else if (converter.busy) {
+                badge.textContent = '🔒 Занят';
+                badge.style.color = '#f59e0b';
+            } else if (converter.deleted) {
+                badge.textContent = '🗑 Удален';
+                badge.style.color = '#6b7280';
+            } else {
+                badge.textContent = '○ Отключен';
+                badge.style.color = '#ef4444';
+            }
+            
+            // Обновляем кнопку подключения
+            const connectBtn = document.getElementById('connectBtn');
+            if (converter.connected) {
+                connectBtn.textContent = 'Отключить';
+                connectBtn.className = 'btn btn-danger';
+            } else {
+                connectBtn.textContent = 'Подключить';
+                connectBtn.className = 'btn btn-success';
+            }
+            
+            // Обновляем выбранную скорость
+            document.getElementById('speedSelect').value = converter.workingSpeed || 38400;
+            
+            isConnected = converter.connected;
+        }
+        
+        // Обновление списка контроллеров
+        function updateControllerList(converter) {
+            const container = document.getElementById('controllerList');
+            if (converter.connected) {
+                container.innerHTML = \`
+                    <div class="empty-state">
+                        <span class="icon">🔍</span>
+                        Сканирование контроллеров...
+                        <button class="btn btn-primary" style="margin-top: 12px;" onclick="scanControllers()">
+                            Начать сканирование
+                        </button>
+                    </div>
+                \`;
+            } else {
+                container.innerHTML = \`
+                    <div class="empty-state">
+                        <span class="icon">📡</span>
+                        Подключитесь к конвертеру<br>для сканирования контроллеров
+                    </div>
+                \`;
+            }
+        }
+        
+        // Сканирование контроллеров
+        async function scanControllers() {
+            if (!selectedConverter) return;
+            
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api: 'controller',
+                        cmd: 'scan',
+                        data: { serialNumber: selectedConverter }
+                    })
+                });
+                const data = await response.json();
+                // Обновляем список контроллеров
+                console.log('Scan result:', data);
+            } catch (error) {
+                console.error('Error scanning controllers:', error);
+            }
+        }
+        
+        // Переключение UDP поиска
+        async function toggleUdp() {
+            const btn = document.getElementById('udpToggle');
+            const isActive = btn.classList.contains('active');
+            
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api: 'server',
+                        cmd: 'updateSettings',
+                        data: { udpSearchEnabled: !isActive }
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    btn.classList.toggle('active');
+                    btn.classList.toggle('inactive');
+                    btn.textContent = \`Поиск: \${btn.classList.contains('active') ? 'Вкл' : 'Выкл'}\`;
+                }
+            } catch (error) {
+                console.error('Error toggling UDP:', error);
+            }
+        }
+        
+        // Применить скорость
+        async function applySpeed() {
+            if (!selectedConverter) {
+                alert('Выберите конвертер');
+                return;
+            }
+            
+            const speed = document.getElementById('speedSelect').value;
+            
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api: 'converter',
+                        cmd: 'setSpeed',
+                        data: { serialNumber: selectedConverter, speed: parseInt(speed) }
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Скорость успешно изменена');
+                    loadConverterInfo(selectedConverter);
+                }
+            } catch (error) {
+                console.error('Error applying speed:', error);
+                alert('Ошибка применения скорости');
+            }
+        }
+        
+        // Подключение/отключение
+        async function toggleConnection() {
+            if (!selectedConverter) {
+                alert('Выберите конвертер');
+                return;
+            }
+            
+            const cmd = isConnected ? 'disconnect' : 'connect';
+            
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api: 'converter',
+                        cmd: cmd,
+                        data: { serialNumber: selectedConverter }
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    loadConverterInfo(selectedConverter);
+                }
+            } catch (error) {
+                console.error('Error toggling connection:', error);
+                alert('Ошибка переключения соединения');
+            }
+        }
+        
+        // Удалить конвертер
+        async function deleteConverter() {
+            if (!selectedConverter) {
+                alert('Выберите конвертер');
+                return;
+            }
+            
+            if (!confirm('Удалить конвертер ' + selectedConverter + '?')) return;
+            
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api: 'converter',
+                        cmd: 'delete',
+                        data: { serialNumber: selectedConverter }
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    selectedConverter = null;
+                    loadConverterList();
+                    document.getElementById('infoTitle').textContent = 'Выберите конвертер';
+                    document.getElementById('infoSubtitle').textContent = 'Нажмите на конвертер в списке слева';
+                }
+            } catch (error) {
+                console.error('Error deleting converter:', error);
+                alert('Ошибка удаления конвертера');
+            }
+        }
+        
+        // Обновить информацию
+        async function refreshInfo() {
+            if (!selectedConverter) {
+                alert('Выберите конвертер');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api: 'converter',
+                        cmd: 'updateInfo',
+                        data: { serialNumber: selectedConverter }
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    loadConverterInfo(selectedConverter);
+                }
+            } catch (error) {
+                console.error('Error refreshing info:', error);
+                alert('Ошибка обновления информации');
+            }
+        }
+        
+        // Загрузка списка конвертеров
+        async function loadConverterList() {
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api: 'converter',
+                        cmd: 'list',
+                        data: {}
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    converters = data.result;
+                    updateUI();
+                }
+            } catch (error) {
+                console.error('Error loading converters:', error);
+            }
+        }
+        
+        // Обновление UI
+        function updateUI() {
+            const serverConverters = converters.filter(c => c.mode === 'server' && !c.deleted);
+            const clientConverters = converters.filter(c => c.mode === 'client' && !c.deleted);
+            
+            // Обновляем заголовки
+            document.querySelector('.list-section:first-child .list-section-title').textContent = 
+                \`📡 Серверы (\${serverConverters.length})\`;
+            document.querySelector('.list-section:last-child .list-section-title').textContent = 
+                \`🔄 Клиенты (\${clientConverters.length})\`;
+            
+            // Рендерим списки
+            const serverList = document.getElementById('serverList');
+            const clientList = document.getElementById('clientList');
+            
+            serverList.innerHTML = serverConverters.map(c => renderConverterItem(c)).join('');
+            clientList.innerHTML = clientConverters.map(c => renderConverterItem(c)).join('');
+            
+            // Выделяем выбранный
+            if (selectedConverter) {
+                document.querySelectorAll('.converter-item').forEach(el => {
+                    el.classList.toggle('selected', el.dataset.sn === selectedConverter);
+                });
+            }
+        }
+        
+        // Периодическое обновление
+        setInterval(loadConverterList, 5000);
+        
+        // Загрузка при старте
+        loadConverterList();
+        
+        // Если есть конвертеры, выбираем первый
+        setTimeout(() => {
+            if (converters.length > 0 && !selectedConverter) {
+                selectConverter(converters[0].serialNumber);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>`;
+    
+    // Сохраняем страницу
+    const equipmentPath = path.join(PATHS.pages, 'equipment.html');
+    fs.writeFileSync(equipmentPath, html, 'utf8');
+    console.log('📄 Страница оборудования создана');
+}
+
+// Генерируем страницу оборудования
+generateEquipmentPage();
+
+// Генерируем главную страницу
+pageGenerator.generate();
+
+console.log('\n✅ Приложение успешно запущено');

@@ -1,0 +1,21 @@
+[
+  {
+    "ip": "192.168.1.89",
+    "model": "4.0.13",
+    "version": "unknown",
+    "serialNumber": "48424",
+    "L1_Port": "1000",
+    "L2_Port": "1001",
+    "L1_Conn": "192.168.1.61",
+    "L2_Conn": "0.0.0.0",
+    "Lock": "0",
+    "mode": "server",
+    "lastSeen": 1783913976038,
+    "connected": true,
+    "speed": 230400,
+    "autoReconnect": true,
+    "deleted": false,
+    "busy": false,
+    "busyWith": null
+  }
+]
