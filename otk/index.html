@@ -1,0 +1,68 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <TITLE>Modbus</TITLE>
+     <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class='main'>
+    <div class='top'>Контроллер Modbus</div>
+    <div class='content'>
+		<div class='section' data-block='controllers'>
+	
+		</div>
+		<div class='centre'>
+			<div data-line='Controls'>
+				<div data-click='ask'  title = "Отправить запрос" >ASK</div>	
+				<div data-click='find'  title = "Сканировать адреса" >FIND</div>
+				<div data-click='show_log'  title = "Показать лог" >SHOW</div>				
+			</div>
+			<div data-line='Controls'>
+				<div data-click='open_lock'  title = "Открыть замок" >OPEN</div>
+				<div data-click='green'  title = "Подать питание на LED" >LED</div>
+				<div data-click='red'  title = "Замкнуть ZUMM на GND" >ZUMM</div>	
+				<div data-click='sound'  title = "Включить звук контроллера" >SOUND</div>
+				<div data-click='d0'  title = "Замкнуть TM на GND" >TM</div>	
+				<div data-click='d1'  title = "Замкнуть EXIT на GND" >EXIT</div>	
+			</div>
+			<div data-line='Controls'>
+				<div data-click='groop'  title = "Пакетная команда" >GROOP</div>			
+				<div data-click='read'  title = "Прочитать состояние" >READ</div>
+				<div data-click='get_info'  title = "Получить информацию о контроллере" >INFO</div>
+				<div data-click='new_addess'  title = "Изменить сетевой адрес" >ADDR</div>
+				<input  type="number" value=2  id="port_num" title = "Новый сетевой адрес" >
+				
+			</div>
+			<div data-line='pole'>
+				<div id="pole"></div>
+			</div>
+			<div data-line='pole'>
+				<div>A_DOOR</div>
+				<div id="a_door"></div>
+			</div>
+			<div data-line='pole'>
+				<div>A_LED</div>
+				<div id="a_led"></div>
+			</div>
+			<div data-line='pole'>
+				<div>A_ZP</div>
+				<div id="a_zp"></div>
+			</div>
+			<div data-line='pole'>
+				<div>A_12V</div>
+				<div id="a_12v"></div>
+			</div>
+			<div data-line='pole'>
+				<div>INFO</div>
+				<div id="a_info"></div>
+			</div>
+		</div>
+		<div class='section'>
+			<div data-click='recovery' title = "Выбрать порт"></div>		
+		</div>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

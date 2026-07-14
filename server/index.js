@@ -8,18 +8,27 @@ const dgram = require('dgram');//UDP socket
 const port = 25000;
 const port_client=1000;
 const port_http=8080;
-var port_ws=9090;
-//const roles=["manager", "admin"];
+const port_ws=9090;
+//let roles=["manager", "admin"];
 const port_udp = 9000;
 const broadcast_adr = "255.255.255.255";
 const ip_adresses = os.networkInterfaces();
 let folder="site";
 
-let converters = {}; //список конвертеров
+let converters = []; //список конвертеров
 let controllers={};  //список объектов найденных контроллеров по сетевым адресам
 let cards={};  //список объектов карт по номерам карт
 let t_start;  //отладочная переменная для измерения времени ответа
 
+console.log('Версия 1.1.1');
+const Zip = require("adm-zip");
+
+if(fs.existsSync("resources.zip") ){
+    const zip = new Zip("resources.zip");
+    //log("Unpacking files...");
+    zip.extractAllTo(__dirname, false);
+    //log("Successfully unpacked!");
+}
 
 let host = '10.4.9.117';
 for(const i in ip_adresses){ // получаем свой IP адрес для TCP, UDP и HTTP серверов
@@ -34,7 +43,26 @@ for(const i in ip_adresses){ // получаем свой IP адрес для T
 	}
 }
 
+const { exec } = require("child_process"); //поиск мак адреса
+function os_func() {
+    this.execCommand = function(cmd, callback) {
+        exec(cmd, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                return;
+            }
 
+            callback(stdout);
+        });
+    }
+}
+var os1 = new os_func();
+function mac_print(os1){
+	os1.execCommand('arp -a', function (returnvalue) { 
+		console.log(returnvalue)
+	});
+}
+//mac_print(os1); //печатаем мак адреса
 
 //UDP server  поиск конвертеров -------------->>-----------------------
 const server_udp = dgram.createSocket("udp4");
@@ -48,6 +76,7 @@ server_udp.on('message', function (message, rinfo) {
 	let msg={};
 	msg.from=rinfo.address;
 	let str=String(message);
+	//console.log(str);
 	arr=str.split(' ');
 	for(let i in arr){
 		let k=arr[i].split(':');
@@ -85,36 +114,48 @@ function new_client(msg){
 	let client = new net.Socket();
 	let converter;
 	client.connect(port_client, msg.from, function() {
-		if(!(msg.number in converters)){
-		console.log('CONNECTED: '+ msg.number+'  ' + client.remoteAddress + ':' + client.remotePort);
-		//client.write(Buffer.from([0xFF, 0xFA, 0x2C, 0x01, 0x00, 0x00, 0x96, 0x00, 0xFF, 0xF0]));// для modbus 38400
-		//client.write(Buffer.from([0xFF, 0xFA, 0x2C, 0x01, 0x00, 0x03, 0x84, 0x00, 0xFF, 0xF0]));//Для  "ADVANCED"
-		converters[msg.number]=new Converter(client, msg);
-		converter=converters[msg.number];
-		//начинаем поиск контроллеров
-		setTimeout(()=>func_api.finding_controllers_start(converters[msg.number]), 700);
+		//let number=client.remoteAddress; //converters.length;
+		let number=converters.length;
+		if(!(client.remoteAddress in converters)){ //проверять по ip?
+			console.log('CONNECTED: '+ number+'  ' + client.remoteAddress + ':' + client.remotePort);
+			//client.write(Buffer.from([0xFF, 0xFA, 0x2C, 0x01, 0x00, 0x00, 0x96, 0x00, 0xFF, 0xF0]));// для modbus 38400
+			//client.write(Buffer.from([0xFF, 0xFA, 0x2C, 0x01, 0x00, 0x03, 0x84, 0x00, 0xFF, 0xF0]));//Для  "ADVANCED"
+			converters[number]=new Converter(client, msg);
+			converter=converters[number];
+			converter.count=number;//номер по порядку подключения
+			//начинаем поиск контроллеров
+			setTimeout(()=>func_api.finding_controllers_start(converters[number]), 700);
 		}else{
-			converter=converters[msg.number];
-			converter.socket=client;
-			console.log('OLD CONNECTED: '+ msg.number+'  ' + client.remoteAddress + ':' + client.remotePort);
-			converter.q_fast=[];
-			converter.i_fast=-1;
-			converter.q_main=[]; //объекты очереди {func, data, callback} - ссылка на функцию команды, данные команды, куда вернуть ответ 
-			converter.i_main=-1
-			setTimeout(()=>func_api.finding_controllers_start(converters[msg.number]), 700);
+			//converter=converters[number];
+			//converter.count=number;//номер по порядку подключения
+			//converter.socket=client;
+			//converter.connected=true;
+			//console.log('OLD CONNECTED: '+ msg.number+'  ' + client.remoteAddress + ':' + client.remotePort);
+			//converter.q_fast=[];
+			//converter.i_fast=-1;
+			//converter.q_main=[]; //объекты очереди {func, data, callback} - ссылка на функцию команды, данные команды, куда вернуть ответ 
+			//converter.i_main=-1
+			//setTimeout(()=>func_api.finding_controllers_start(converters[number]), 700);
 		}
 	});
 	client.on('data', function(data) {
 		converter.listener(data);
+		converter.last_answer=+(new Date());
 	});
 	client.on('close', function() {
-		//console.log(converter.number+' client closed');
-		//converter.connected=false; 
-		//setTimeout(broadcastNew, 3000);
+		//тут перед сообщением нужно проверить, есть ли сейчас соединение - как это сделать?
+		//if(converter.last_answer+3000<+(new Date())){
+		//	console.log('close');
+			converter.connected=false;
+			converter.q_fast=[];
+			converter.i_fast=-1;
+			converter.q_main=[]; //объекты очереди {func, data, callback} - ссылка на функцию команды, данные команды, куда вернуть ответ 
+			converter.i_main=-1
+		//}
 	});
 	client.on('error', function() {
-		//converter.connected=false;
-		//console.log(converter.number+" error client ");
+		//	console.log('error');
+		//	converter.connected=false;
 	});
 }
 //----------------------------<<<------------------------------
@@ -127,26 +168,46 @@ console.log('TCP Server running at ' + host + ' port '+ port);
 });
 
 server.on('connection', function(sock) {
-	let obj={socket:sock, data:""};
-	obj.queue=new Set(); //очередь
-	obj.stack=[]; //стэк
-	obj.cmd_id=0;
-	//console.log('CONNECTED: ' + obj.socket.remoteAddress + ':' + obj.socket.remotePort);
-	//obj.socket.write(Buffer.from([0xFF, 0xFA, 0x2C, 0x01, 0x00, 0x03, 0x84, 0x00, 0xFF, 0xF0]));//Для перевода конвертера в режим "ADVANCED" необходимо установить скорость линии 230400:
-	obj.socket.on('data', function(data) {
-		obj.data=data;
-		func_api.answer(obj);	
+	let msg ={model:"z-397 web", number:"123", version:"567"};
+	let converter;
+	//let number=sock.remoteAddress; //converters.length;
+	let number=converters.length;
+	if(!(sock.remoteAddress in converters)){
+		console.log('CONNECTED: '+ number+'  ' + sock.remoteAddress + ':' + sock.remotePort);
+		converters[number]=new Converter(sock, msg);
+		converter=converters[number];
+		converter.count=number;//номер по порядку подключения
+		//начинаем поиск контроллеров
+		setTimeout(()=>func_api.finding_controllers_start(converters[number]), 700);
+	}else{
+		//converter=converters[number];
+		//converter.socket=sock;
+		//converter.count=number;//номер по порядку подключения
+		//converter.connected=true;
+		//console.log('OLD CONNECTED: '+ msg.number+'  ' + sock.remoteAddress + ':' + sock.remotePort);
+		//converter.q_fast=[];
+		//converter.i_fast=-1;
+		//converter.q_main=[]; //объекты очереди {func, data, callback} - ссылка на функцию команды, данные команды, куда вернуть ответ 
+		//converter.i_main=-1
+		//setTimeout(()=>func_api.finding_controllers_start(converters[number]), 700);
+	}
+	sock.on('data', function(data) {
+		converter.listener(data);
+		converter.last_answer=+(new Date());
 	});
-	obj.socket.on('error', function(data) {
-		console.log("error from ");
+	sock.on('error', function(data) {
+		//console.log("error from ");
 	});
-	obj.socket.on('close', function(data) {
-		//console.log(obj.name+' server closed');
-		//converters[obj.name].connected=false; 
+	sock.on('close', function(data) {
+		//if(converter.last_answer+3000<+(new Date())){
+			//console.log('long wait');
+			converter.connected=false;
+			converter.q_fast=[];
+			converter.i_fast=-1;
+			converter.q_main=[]; //объекты очереди {func, data, callback} - ссылка на функцию команды, данные команды, куда вернуть ответ 
+			converter.i_main=-1
+		//}
 	});
-	in_api.queue_add(obj, {}, in_api.new_sock);
-	in_api.queue_add(obj, {}, in_api.read_lic);
-	
 });
 //--------------<<<------------------------------------------------------
 
@@ -172,11 +233,20 @@ var admins=new Map();//список карт
 //var socket_controllrts=[];//список номеров контроллеров в режиме сокет
 
 function onConnect(wsClient) {
+	let api_key='1356_api';
 	let id=num++;
 	list_cl[id]=wsClient;
+	function fnk(thet){
+		let answer={};
+		answer.api='trigger_info';
+		answer.trigger_info=thet.trigger_info;
+		answer.trigger_info.data=thet.data;
+		wsClient.send(JSON.stringify(answer));
+	};
+	list_cl[id].callback=fnk;
     console.log('Новый пользователь'+id);
 
-    list_cl[id].on('close', function() {
+    list_cl[id].on('close', function(){
         console.log('Пользователь отключился '+id);
 		delete list_cl[id];
 		//delete socket_controllrts[id];
@@ -184,39 +254,31 @@ function onConnect(wsClient) {
     });
 
     list_cl[id].on('message', function(message) {
+		let answer={};
         try {
-            var jsonObj = JSON.parse(message);
-			var flag=1;
-			if("api" in jsonObj){
-				//admins.set(id, jsonObj.messages.sn);
-				//if(log_server_admin){
-				//	console.log(message);
-				//}
-				//if(jsonObj.api=='get'){
-				//	flag=0;
-				//	get_list(jsonObj.messages.operation, jsonObj.messages.sn, list_cl[id], type='socket');
-				//}
-				//if(jsonObj.api=='set'){
-				//	flag=0;
-				//	set_command(jsonObj.messages, list_cl[id], type='socket');
-				//}
-				//if(jsonObj.api=='controll'){
-				//	flag=0;
-				//	controll_command(jsonObj.messages, response);
-				//}
-				if(jsonObj){
-					
+            let jsonObj = JSON.parse(message);
+			answer.check_admin=0;
+			if('api_key' in jsonObj){
+				if(jsonObj.api_key==api_key){
+					answer.check_admin=1;
+					answer.api=jsonObj.api;
+					if(jsonObj.api in out_api){
+						out_api[jsonObj.api](jsonObj, list_cl[id], answer);  //req, res, answer
+					}else{
+						answer.info='wrong api';
+						list_cl[id].send(JSON.stringify(answer));
+					}
+				}else{
+					answer.info='wrong api_key';
+					list_cl[id].send(JSON.stringify(answer));	
 				}
+			}else{
+				answer.info='wrong messade';
+				list_cl[id].send(JSON.stringify(answer));
 			}
         } catch (error) {
             console.log('Ошибка', error);
         }
-		if(flag){
-			list_cl[id].send(JSON.stringify(controllers[jsonObj.sn].answer));
-			if(log_controller_server){
-				console.log("ansver server >> controller "+jsonObj.sn+" - "+ JSON.stringify(controllers[jsonObj.sn].answer));
-			}
-		}
     });
 }
 
@@ -275,22 +337,22 @@ function send_post(req, res){
     }).on('end', function() {
         body = Buffer.concat(body).toString();
         try {
-            let obj={}; 
+            //let obj={}; 
 			let data = JSON.parse(body);
-			obj.role=path.basename(req.url);
-			if(roles.includes(obj.role)){
+			//obj.role=path.basename(req.url);
+			//if(roles.includes(obj.role)){
 				if(data.command in out_api){
-					if(data.conv){
-						in_api.queue_add(converters[data.conv], {reg:req, res:res, data:data, obj:obj}, out_api[data.command]);
-					}else{
-						out_api[data.command](req, res, data, obj);
-					}
+					//if(data.conv){
+					//	func_api.queue_add(converters[data.conv], {reg:req, res:res, data:data, obj:obj}, out_api[data.command]);
+					//}else{
+						out_api[data.command](req, res, data);
+					//}
 				}else{
 					functions.answer_send(res, "no the command");
 				}
-			}else{
-				functions.answer_send(res, "no the role");
-			}	
+			//}else{
+			//	functions.answer_send(res, "no the role");
+			//}	
         } catch (e) {
             console.error(e);
         }
@@ -308,15 +370,16 @@ class Converter{
 		this.q_fast=[];
 		this.i_fast=-1;
 		this.q_main=[]; //объекты очереди {func, data, callback} - ссылка на функцию команды, данные команды, куда вернуть ответ 
-		this.i_main=-1;
+		this.i_main=-1; //номер в очереди
 		this.survey=''; // интервал сканирования
 		this.finding='';//интервал поиска
 		this.scan_count=1;
-		this.scan_controllers=30;
+		this.scan_controllers=5;
 		this.scan_current=0;
 		this.pause=5;//Пауза перед отправкой
-		this.wait=20;//Ожидание до нет ответа
+		this.wait=200;//Ожидание до нет ответа
 		this.timer; //указатель на текущий таймер ответа - для перехода в случае не ответа
+		this.count=0;//номер конвертера в порядке подключения
 		this.number=msg.number;
 		this.version=msg.version;
 		this.model=msg.model;
@@ -329,6 +392,7 @@ class Converter{
 		this.answer_length=[0,13,0,0,17,0,8];
 		this.count_out=0; //test
 		this.count_in=0; //test
+		this.last_answer= +(new Date());
 	}
 	add(q_type, data, receiver=func_api.survey_receiver, callback=''){
 		let obj={data:data, receiver:receiver, callback:callback};
@@ -352,7 +416,9 @@ class Converter{
 			}else{
 				this.i_main=-1;
 				this.q_main=[];
-				func_api.survey_make(this);
+				if(this.connected){
+					func_api.survey_make(this);
+				}
 			}
 		}
 		function step (type, thet){
@@ -361,13 +427,15 @@ class Converter{
 			thet[i]++;
 			thet.type=type;
 			thet.current=thet[q][thet[i]];
-		//thet.count_out++;			
-			thet.socket.write(thet.current.data); 
-			thet.timer=setTimeout(()=>{
-				clearTimeout(thet.timer);
-				thet.current.receiver(thet, thet.current.data, false);
-				thet.next();
-			}, thet.wait); //время ожидания ответа 
+		//thet.count_out++;	
+			if(thet.current){
+				thet.socket.write(thet.current.data);
+				thet.timer=setTimeout(()=>{
+					clearTimeout(thet.timer);
+					thet.current.receiver(thet, thet.current.data, false);
+					thet.next();
+				}, thet.wait); //время ожидания ответа 
+			}
 		}
 	}
 	listener(data){
@@ -386,7 +454,7 @@ class Converter{
 			for (let j=0; j<1; j++){
 				if(+this.current.data[j]!=+data[j]){
 					check=0;
-					console.log('check = 0');
+					//console.log('check = 0');
 				}
 			}
 			if(check){
@@ -396,14 +464,15 @@ class Converter{
 				setTimeout(()=>this.next(), this.pause);
 			}
 		}else{
-			console.log('short');
+			//console.log('short');
 		}
 	}
 }
 
-class controller{
+class Controller{
 	constructor(type, number, converter, address) {
 		this.converter=converter; //конвертер к которому подключен этот контроллер
+		this.converter_count=converter.count; //номер конвертера к которому подключен этот контроллер
 		this.address=address; //сетевой RS485 адрес контроллера 
 		this.type=type; //тип контроллера 
 		this.number=number; //серийный номер контроллера
@@ -416,12 +485,13 @@ class controller{
 		this.bit_for_in=2; //бит контакта управлениея замком на вход
 		this.time_open_s=3; //старший байт времени открытия замка
 		this.time_open_m=5; //младший байт времени открытия замка
-		this.add_trigger({type:"door", sost:32, callback:this.closed_for_out});
-		this.add_trigger({type:"door", sost:0, callback:this.closed_for_in});
-		this.add_trigger({type:"tm", sost:4, callback:this.open_for_in});
-		//this.add_trigger({type:"tm", sost:8, callback:func_api.test});
-		this.add_trigger({type:"exit", sost:1, callback:this.open_for_out});
-		//this.add_trigger({type:"exit", sost:2, callback:func_api.test});
+		//this.add_trigger({type:"door", sost:32, callback:this.closed_for_out});
+		//this.add_trigger({type:"door", sost:0, callback:this.closed_for_in});
+		//this.add_trigger({type:"tm", sost:4, callback:this.open_for_in});
+		//this.add_trigger({type:"card_in", sost:8, callback:func_api.test});
+		//this.add_trigger({type:"exit", sost:1, callback:this.open_for_out});
+		//this.add_trigger({type:"card_out", sost:2, callback:func_api.test});
+		//this.add_trigger({type:"card_in", sost:8, callback:func_api.test});
 		//this.add_trigger({type:"v_door", sost:128, callback:func_api.test});
 		//this.add_trigger({type:"v_door", sost:128, callback:func_api.test1});
 		//this.add_trigger({type:"v_led", sost:0, callback:func_api.test});
@@ -433,13 +503,21 @@ class controller{
 	}
 	add_trigger(trigger_set){
 		let trigger_id;
+		let obj_trg={};
 		if(trigger_set.type in func_api.types){ 
 			for(let item in func_api.types[trigger_set.type]){
-				trigger_set[item]=func_api.types[trigger_set.type][item];
+				obj_trg[item]=func_api.types[trigger_set.type][item];
 			}
-			trigger_set.temp=false;
-			trigger_id=this.triggers.push(trigger_set)-1;
+			for(let j in trigger_set){
+				obj_trg[j]=trigger_set[j];
+			}
+			obj_trg.temp=false;
+			trigger_id=this.triggers.push(obj_trg)-1;
 		}
+		this.make_patern();
+		return trigger_id;
+	}
+	make_patern(){
 		this.pattern={};
 		for(let i=0; i<this.triggers.length; i++){ //создаем объект pattern
 			if(!this.triggers[i].min){
@@ -485,25 +563,28 @@ class controller{
 				this.pattern[byte_num].for_all=for_all;
 			}
 		}
-		return trigger_id;
 	}
 	dell_trigger(trigger_id){
-		
+		this.triggers.splice(trigger_id, 1);
+		this.make_patern();
 	}
 	trigger(data){
 		if(data[1]==4){
 
 			this.data=data;
-			for(let byte_num in this.pattern){
-				if(this.pattern[byte_num].bits){
+			for(let byte_num in this.pattern){ //перебираем байты п списке триггеров, сверяем с соответствующим байтом в ответе 
+				if(this.pattern[byte_num].bits){ //битовый шаблом
 					let temp_data=(+data[byte_num])&(+this.pattern[byte_num].for_all);
 					if(temp_data!=this.pattern[byte_num].temp){	
-						for(let bits in this.pattern[byte_num].bits){
+						for(let bits in this.pattern[byte_num].bits){ //перебираем биты
 							if(+(temp_data&bits)!=+(this.pattern[byte_num].temp&bits)){
-								for(let sost in this.pattern[byte_num].bits[bits].sost){
+								for(let sost in this.pattern[byte_num].bits[bits].sost){ //состояния
 									if(temp_data==sost){
-										for (let cb=0; cb<this.pattern[byte_num].bits[bits].sost[sost].length; cb++){
+										//console.log('yes');
+										for (let cb=0; cb<this.pattern[byte_num].bits[bits].sost[sost].length; cb++){//колбэки
 											//this.pattern[byte_num].bits[bits].sost[sost][cb](this.number+' / '+ this.pattern[byte_num].bits[bits].type+' / '+temp_data);
+											this.trigger_info={api:'trigger_info', controller:this.type+'_'+this.number, name: func_api.type_info[byte_num][bits], sost:sost};
+											//console.log(this.trigger_info);
 											this.pattern[byte_num].bits[bits].sost[sost][cb](this);
 										} 
 									}
@@ -513,7 +594,7 @@ class controller{
 						this.pattern[byte_num].temp=temp_data;
 					}
 				}
-				if(this.pattern[byte_num].a){
+				if(this.pattern[byte_num].a){//сравнение по значениям <>
 					let val=(+data[byte_num]);
 					for(let k=0; k< this.pattern[byte_num].a.length; k++){
 						if((val< this.pattern[byte_num].a[k].min-this.pattern[byte_num].a[k].dev)||(val> this.pattern[byte_num].a[k].max+this.pattern[byte_num].a[k].dev)){
@@ -525,6 +606,8 @@ class controller{
 							if(!this.pattern[byte_num].a[k].temp){
 								this.pattern[byte_num].a[k].temp=true;
 								//this.pattern[byte_num].a[k].callback(this.number+' / '+ this.pattern[byte_num].a[k].type+' / '+val);
+								this.trigger_info={api:'trigger_info', controller:this.type+'_'+this.number ,name: func_api.type_info[byte_num], a:this.pattern[byte_num].a[k]};
+								//console.log(this.trigger_info);
 								this.pattern[byte_num].a[k].callback(this);
 							}
 						}					
@@ -536,7 +619,7 @@ class controller{
 	}
 	open_for_out(thet=this){
 		func_api.output(thet, thet.bit_for_out, thet.time_open_s, thet.time_open_m); //thet, bit=0x04, intervals=0, intervalm=0
-		func_api.output(thet, 3, 0, 125); //thet, bit=0x04, intervals=0, intervalm=0
+		func_api.output(thet, 3, 0, 125); 
 	}
 	closed_for_out(thet=this){
 		func_api.output(thet, thet.bit_for_out, 0, 1);
@@ -553,8 +636,159 @@ class controller{
 }
 
 let out_api={
-	
+	controllers_list(req, res, answer){  //jsonObj, list_cl[id], answer);  //req, res, answer
+		let obj={};
+		for(let i in controllers){
+			obj[i]={type: controllers[i].type, number: controllers[i].number, address: controllers[i].address, triggers: controllers[i].triggers};
+		}
+		answer.list=obj;
+		res.send(JSON.stringify(answer));
+	},
+	triggers_type(req, res, answer){  //jsonObj, list_cl[id], answer);  //req, res, answer
+		answer.list=func_api.types;
+		res.send(JSON.stringify(answer));
+	},
+	converters_list(req, res, answer){  
+		let obj={};
+		for(let i=0; i<converters.length; i++){
+			obj[i]={model: converters[i].model, number: converters[i].number, version: converters[i].version};
+		}
+		answer.list=obj;
+		res.send(JSON.stringify(answer));
+	},
+	open_for_out(req, res, answer){  
+		controllers[req.controller].open_for_out();
+		answer.ok=1;
+		res.send(JSON.stringify(answer));
+	},
+	open_for_in(req, res, answer){  
+		controllers[req.controller].open_for_in();
+		answer.ok=1;
+		res.send(JSON.stringify(answer));
+	},
+	green(req, res, answer){  
+		let thet=controllers[req.controller];
+		func_api.green(thet, func_api.plus(req.interval));//req.interval значение в сек
+		answer.ok=1;
+		res.send(JSON.stringify(answer));
+	},
+	red(req, res, answer){  
+		let thet=controllers[req.controller];
+		func_api.red(thet, func_api.plus(req.interval));//req.interval значение в сек
+		answer.ok=1;
+		res.send(JSON.stringify(answer));
+	},
+	sound(req, res, answer){  
+		let thet=controllers[req.controller];
+		func_api.sound(thet, func_api.plus(req.interval));//req.interval значение в сек
+		answer.ok=1;
+		res.send(JSON.stringify(answer));
+	},
+	d0(req, res, answer){  
+		let thet=controllers[req.controller];
+		func_api.d0(thet, func_api.plus(req.interval));//req.interval значение в сек
+		answer.ok=1;
+		res.send(JSON.stringify(answer));
+	},
+	d1(req, res, answer){  
+		let thet=controllers[req.controller];
+		func_api.d1(thet, func_api.plus(req.interval));//req.interval значение в сек
+		answer.ok=1;
+		res.send(JSON.stringify(answer));
+	},
+	lock(req, res, answer){  
+		let thet=controllers[req.controller];
+		func_api.lock(thet, func_api.plus(req.interval));//req.interval значение в сек
+		answer.ok=1;
+		res.send(JSON.stringify(answer));
+	},
+	new_address(req, res, answer){  
+		let thet=controllers[req.controller];
+		func_api.new_address(thet, req.new_adr);//req.interval значение в сек
+		answer.ok=1;
+		res.send(JSON.stringify(answer));
+	},
+	pattern_list(req, res, answer){  //отладочная функция
+		let thet=controllers[req.controller];
+		//console.log(req.controller);
+		//console.log(thet.pattern);
+		//answer.pattern_list=JSON.stringify(thet.pattern);
+		answer.pattern_list=thet.pattern;
+		res.send(JSON.stringify(answer));
+	},
+	trigger_add_ind(req, res, answer){  
+		let thet=controllers[req.controller];
+		
+		if(req.type.slice(0, 2)=='va'){
+			thet.add_trigger({type:req.type, min:req.min, max:req.max, dev:req.dev, callback:res.callback});
+		}else{
+			thet.add_trigger({type:req.type, sost:req.sost, callback:res.callback});
+		}
+		answer.ok=1;
+		answer.controller=req.controller;
+		answer.triggers=controllers[req.controller].triggers;
+		res.send(JSON.stringify(answer));
+	},
+	trigger_add(req, res, answer){  
+		let thet=controllers[req.controller];
+		if(req.type.slice(0, 2)=='va'){
+			thet.add_trigger({type:req.type, min:req.min, max:req.max, dev:req.dev, callback:func_api.callback});
+		}else{
+			thet.add_trigger({type:req.type, sost:req.sost, callback:func_api.callback});
+		}
+		answer.ok=1;
+		answer.controller=req.controller;
+		answer.triggers=controllers[req.controller].triggers;
+		res.send(JSON.stringify(answer));
+	},
+	trigger_add_sys(req, res, answer){  
+		let thet=controllers[req.controller];
+		if(req.obj=='thet'){
+			if(req.type.slice(0, 2)=='va'){
+				thet.add_trigger({type:req.type, min:req.min, max:req.max, dev:req.dev, callback:thet[req.callback]});
+			}else{
+				thet.add_trigger({type:req.type, sost:req.sost, callback:thet[req.callback]});
+			}
+		}
+		if(req.obj=='func_api'){
+			if(req.type.slice(0, 2)=='va'){
+				thet.add_trigger({type:req.type, min:req.min, max:req.max, dev:req.dev, callback:func_api[req.callback]});
+			}else{
+				thet.add_trigger({type:req.type, sost:req.sost, callback:func_api[req.callback]});
+			}
+		}
+		answer.ok=1;
+		answer.controller=req.controller;
+		answer.triggers=controllers[req.controller].triggers;
+		res.send(JSON.stringify(answer));
+	},
+	trigger_dell(req, res, answer){ 
+//console.log('controller  - '+req.controller);
+//console.log('obj  - '+controllers[req.controller]);
+//console.log('number  - '+controllers[req.controller].number);	
+		controllers[req.controller].dell_trigger(req.trigger_id);
+		answer.ok=1;
+		answer.controller=req.controller;
+		answer.triggers=controllers[req.controller].triggers;
+		res.send(JSON.stringify(answer));
+	},
 };
+
+function type_i(){
+	let temp={};
+	for(let i in func_api.types){
+		if(!temp[func_api.types[i].byte_num]){
+			temp[func_api.types[i].byte_num]={};
+		}
+		if(func_api.types[i].bits){
+			temp[func_api.types[i].byte_num][func_api.types[i].bits]=i;
+		}else{
+			temp[func_api.types[i].byte_num]=i;
+		}
+	}
+	func_api.type_info=temp;
+	//console.log(func_api.type_info);
+}
 
 let func_api={
 	types:{
@@ -562,18 +796,20 @@ let func_api={
 		zumm:{byte_num:3, bits:2},
 		sound:{byte_num:3, bits:4},
 		lock:{byte_num:3, bits:8},
-		tm:{byte_num:4, bits:12},
-		exit:{byte_num:4, bits:3},
+		tm:{byte_num:4, bits:4},
+		card_in:{byte_num:4, bits:8},
+		exit:{byte_num:4, bits:1},
+		card_out:{byte_num:4, bits:2},
 		reader:{byte_num:4, bits:16},	
 		door:{byte_num:4, bits:32},
-		v_door:{byte_num:11, bits:128},
-		v_led:{byte_num:12, bits:128},
-		v_zp:{byte_num:13, bits:128},
-		v_12:{byte_num:14, bits:128},
-		va_door:{byte_num:11},
-		va_led:{byte_num:12},
-		va_zp:{byte_num:13},
-		va_12:{byte_num:14},
+		v_door:{byte_num:11, bits:127},
+		v_led:{byte_num:12, bits:127},
+		v_zp:{byte_num:13, bits:127},
+		v_12:{byte_num:14, bits:127},
+		va_door:{byte_num:11, min:-20, max:100, dev:10},
+		va_led:{byte_num:12, min:-20, max:100, dev:10},
+		va_zp:{byte_num:13, min:-20, max:100, dev:10},
+		va_12:{byte_num:14, min:-20, max:100, dev:10},
 	},
 	outputs:{
 		led:{byte_num:3, value:1},
@@ -583,16 +819,12 @@ let func_api={
 		data0:{byte_num:3, value:5},
 		data1:{byte_num:3, value:6},
 	},
-
-	
 	minus(value){
-		return new Uint8Array(new Uint16Array([~(128*value)+1]).buffer);
+		return new Uint8Array(new Uint16Array([~(128*(-value))+1]).buffer);
 	},
 	plus(value){
 		return new Uint8Array(new Uint16Array([128*value]).buffer);
-	},
-	
-	
+	},	
 	va(data){
 		
 	},
@@ -640,18 +872,23 @@ let func_api={
 		}
 	},
 	survey_receiver(thet, data, ok){
-
 		if(ok){
 			if(thet.addresses[thet.current.data[0]].active==false){
 				console.log(thet.current.data[0]+" active");
 				thet.addresses[thet.current.data[0]].active=true;
 			}
-			thet.addresses[thet.current.data[0]].trigger(data);
+			if(thet.addresses[thet.current.data[0]].trigger){
+				thet.addresses[thet.current.data[0]].trigger(data);
+			}
 		}else{
 			let adr = new Uint8Array([data[0], 0x04, 0x00, 0x00, 0x00, 0x05]); //запрос текущего состояния
 			let data_out = func_api.buff_sum([adr, func_api.getCRC(adr)]);
 			thet.add("q_fast", data_out, func_api.no_ansver_0);
-			console.log('no ansver 1 - '+ data[0]);
+			//if(thet.addresses[thet.current.data[0]].active==true){
+				//console.log(thet.current.data[0]+" no aсtive");
+			//	thet.addresses[thet.current.data[0]].active=false;
+			//}
+			//console.log('no ansver 1 - '+ data[0]);
 		}
 	},
 	no_ansver_0(thet, data, ok){
@@ -664,7 +901,7 @@ let func_api={
 			let adr = new Uint8Array([data[0], 0x04, 0x00, 0x00, 0x00, 0x05]); //запрос текущего состояния
 			let data_out = func_api.buff_sum([adr, func_api.getCRC(adr)]);
 			thet.add("q_fast", data_out, func_api.no_ansver);
-			console.log('no ansver 2 - '+ data[0]);
+			//console.log('no ansver 2 - '+ data[0]);
 		}
 	},
 	no_ansver(thet, data, ok){
@@ -674,10 +911,11 @@ let func_api={
 				thet.addresses[thet.current.data[0]].active=true;
 			}
 		}else{
+			//console.log('no ansver 3 - '+ data[0]);
 			if(thet.addresses[thet.current.data[0]].active==true){
 				console.log(thet.current.data[0]+" no active");
 				thet.addresses[thet.current.data[0]].active=false;
-				console.log('no ansver 3 - '+ data[0]);
+				//console.log('no ansver 3 - '+ data[0]);
 			}
 		}
 	},
@@ -686,6 +924,18 @@ let func_api={
 			let number=(+data[10])*256 + (+data[9]);
 			let type=(+data[3]);
 			if(controllers[type+"_"+number]){
+				if(thet.count!=controllers[type+"_"+number].converter_count){
+					controllers[type+"_"+number].converter_count=thet.count;
+					controllers[type+"_"+number].converter=thet;
+					//controllers[type+"_"+number].address=data[0];
+					thet.addresses[data[0]]=controllers[type+"_"+number];
+					//console.log(controllers[type+"_"+number]);
+					//if(!thet.addresses[data[0]].request){
+					//	let adr = new Uint8Array([data[0], 0x04, 0x00, 0x00, 0x00, 0x05]); //запрос текущего состояния
+					//	thet.addresses[data[0]].request = func_api.buff_sum([adr, func_api.getCRC(adr)]);
+					//}
+					//controllers[type+"_"+number].data=data;
+				}
 				if(controllers[type+"_"+number].address!=data[0]){
 					controllers[type+"_"+number].address=data[0];
 					let adr = new Uint8Array([data[0], 0x04, 0x00, 0x00, 0x00, 0x05]); //запрос текущего состояния
@@ -693,8 +943,12 @@ let func_api={
 					thet.addresses[data[0]].request=data_out; //сохраняем запрос для повторного использования
 				}
 			}else{
-				controllers[type+"_"+number]=new controller (type, number, thet, data[0]);
+				controllers[type+"_"+number]=new Controller (type, number, thet, data[0]);
 				console.log(thet.current.data[0]+" New - "+number);
+				//общее оповещение всем абонентам
+				let trigger_info={api:'trigger_info', controller:type+'_'+number, name:'new controller', sost:1};
+				//console.log(controllers[type+"_"+number]+"  "+trigger_info);
+				func_api.for_all_user(trigger_info);
 				thet.addresses[data[0]]=controllers[type+"_"+number];
 				let adr = new Uint8Array([data[0], 0x04, 0x00, 0x00, 0x00, 0x05]); //запрос текущего состояния
 				let data_out = func_api.buff_sum([adr, func_api.getCRC(adr)]);
@@ -710,7 +964,7 @@ let func_api={
 				if(!thet.addresses[data[0]].active){
 					thet.addresses[data[0]].active=true;
 					thet.add("q_fast", data_out, func_api.new_controller);
-					console.log(thet.current.data[0]+" active 341");
+					console.log(thet.current.data[0]+" active");
 				}
 			}else{
 				thet.addresses[data[0]]={active:true}
@@ -720,7 +974,7 @@ let func_api={
 			if(thet.addresses[thet.current.data[0]]){
 				if(thet.addresses[thet.current.data[0]].active){
 					thet.addresses[thet.current.data[0]].active=false;
-					console.log(thet.current.data[0]+" no active 352");
+					console.log(thet.current.data[0]+" no active");
 				}
 			}
 		}
@@ -732,9 +986,13 @@ let func_api={
 		//converter.finding=setInterval(()=>{
 		//	func_api.finding_make(converter);
 		//	console.log("Start finding");
+		//	console.log(converter.scan_count);
 		//}, converter.wait*500);
 	},
 	finding_make(converter){
+		//console.log('finding start');
+		//console.log(converter.count);
+		//console.log(converter.addresses);
 		for (let i=0; i<40; i++){
 			let adr = new Uint8Array([i, 0x04, 0x00, 0x00, 0x00, 0x05]); //запрос текущего состояния
 			let data = func_api.buff_sum([adr, func_api.getCRC(adr)]);
@@ -745,7 +1003,14 @@ let func_api={
 		for(let i in converter.addresses){
 			//let adr = new Uint8Array([i, 0x04, 0x00, 0x00, 0x00, 0x05]); //запрос текущего состояния
 			//let data = func_api.buff_sum([adr, func_api.getCRC(adr)]);
-			converter.add("q_main", converter.addresses[i].request);
+			if(converter.addresses[i].request){
+				converter.add("q_main", converter.addresses[i].request);
+			}else{
+				let adr = new Uint8Array([i, 0x04, 0x00, 0x00, 0x00, 0x05]); //запрос текущего состояния
+				let data = func_api.buff_sum([adr, func_api.getCRC(adr)]);
+				converter.addresses[i].request=data;
+				converter.add("q_main", data, func_api.finding_controllers_receiver);
+			}
 		}
 		if(converter.scan_current<converter.scan_controllers){
 			converter.scan_current++;		
@@ -774,32 +1039,42 @@ let func_api={
 		let data = this.buff_sum([adr, this.getCRC(adr)]);
 		thet.converter.add("q_fast", data);//функция добавления в очередь
 	},
-	green(thet, interval=0xff){
-		let adr = new Uint8Array([thet, 0x06, 0x00, 0x01, 0x00, interval]); //зеленый - контакт LED
+	green(thet, interval=2){
+		let adr = new Uint8Array([thet.address, 0x06, 0x00, 0x01,  interval[1], interval[0]]); //зеленый - контакт LED
+		let data = this.buff_sum([adr, this.getCRC(adr)]);
+		//console.log('controller');
+		//console.log(thet.address);
+		//console.log(thet.address);
+		thet.converter.add("q_fast", data);//функция добавления в очередь
+	},
+	red(thet, interval=2){
+		let adr = new Uint8Array([thet.address, 0x06, 0x00, 0x02, interval[1], interval[0]]); //красный - контакт ZUMM
+		let data = this.buff_sum([adr, this.getCRC(adr)]);
+		//console.log(thet);
+		//console.log(thet.address+' address');
+		thet.converter.add("q_fast", data);//функция добавления в очередь
+	},
+	sound(thet,  interval=2){
+		let adr = new Uint8Array([thet.address, 0x06, 0x00, 0x03,  interval[1], interval[0]]); //звук - звук контроллера
 		let data = this.buff_sum([adr, this.getCRC(adr)]);
 		thet.converter.add("q_fast", data);//функция добавления в очередь
 	},
-	red(thet, interval=0xff){
-		let adr = new Uint8Array([thet.addess, 0x06, 0x00, 0x02, 0x00, interval]); //красный - контакт ZUMM
+	d0(thet, interval=2){
+		let adr = new Uint8Array([thet.address, 0x06, 0x00, 0x05, interval[1], interval[0]]); //зеленый
 		let data = this.buff_sum([adr, this.getCRC(adr)]);
 		thet.converter.add("q_fast", data);//функция добавления в очередь
 	},
-	sound(thet,  intervals=0, intervalm=0xff){
-		let adr = new Uint8Array([thet.addess, 0x06, 0x00, 0x03, intervals, intervalm]); //звук - звук контроллера
+	d1(thet, interval=2){
+		let adr = new Uint8Array([thet.address, 0x06, 0x00, 0x06, interval[1], interval[0]]); //зеленый
 		let data = this.buff_sum([adr, this.getCRC(adr)]);
 		thet.converter.add("q_fast", data);//функция добавления в очередь
 	},
-	d0(thet, interval=0xff){
-		let adr = new Uint8Array([thet.addess, 0x06, 0x00, 0x05, 0x00, interval]); //зеленый
+	lock(thet, interval=0){
+		let adr = new Uint8Array([thet.address, 0x06, 0x00, 0x04, interval[1], interval[0]]); //зеленый
 		let data = this.buff_sum([adr, this.getCRC(adr)]);
 		thet.converter.add("q_fast", data);//функция добавления в очередь
 	},
-	d1(thet, interval=0xff){
-		let adr = new Uint8Array([thet.addess, 0x06, 0x00, 0x06, 0x00, interval]); //зеленый
-		let data = this.buff_sum([adr, this.getCRC(adr)]);
-		thet.converter.add("q_fast", data);//функция добавления в очередь
-	},
-	new_addess(thet, new_ard=2){
+	new_address(thet, new_ard=2){
 		let adr = new Uint8Array([thet.address, 0x06, 0x00, 0x10, new_ard, new_ard]); //смена адреса,  - повтор адреса для защиты от ошибок
 		let data = this.buff_sum([adr, this.getCRC(adr)]);
 		thet.converter.add("q_fast", data);//функция добавления в очередь
@@ -808,9 +1083,26 @@ let func_api={
 		let adr = new Uint8Array([thet.address, 0x01, 0x00, 0x00, 0x00, 0x05]); //инфо о контроллере
 		let data = this.buff_sum([adr, this.getCRC(adr)]);
 		thet.converter.add("q_fast", data);//функция добавления в очередь
-	}
-	
+	},
+	for_all_user(trigger_info){
+		//console.log(JSON.stringify(trigger_info));
+		for(let i in list_cl){
+			console.log(i);
+			list_cl[i].send(JSON.stringify(trigger_info));
+		}
+	},
+	callback(thet){
+		let answer={};
+		answer.api='trigger_info';
+		answer.trigger_info=thet.trigger_info;
+		answer.trigger_info.data=thet.data;
+		//wsClient.send(JSON.stringify(answer));
+		for(let i in list_cl){
+			console.log(i);
+			list_cl[i].send(JSON.stringify(answer));
+		}
+	},
 };
 
-
+type_i();
 

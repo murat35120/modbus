@@ -1,5 +1,18 @@
 {
+  "name": "node_server",
+  "version": "1.0.0",
+  "main": "index.js",
   "dependencies": {
-    "ws": "^8.14.0"
-  }
+    "adm-zip": "^0.5.9",
+    "nexe": "^4.0.0-beta.19",
+    "utf-8-validate": "^5.0.5",
+    "ws": "^7.4.5"
+  },
+  "scripts": {
+    "build": "node build.js && nexe Script.js -r \"resources.zip\" -t windows-x86-12.16.3 && nexe --build"
+  },
+  "author": "Murat",
+  "license": "ISC",
+  "devDependencies": {},
+  "description": ""
 }

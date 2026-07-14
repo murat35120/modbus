@@ -1,0 +1,187 @@
+.main div, .main input, .main select, .main, .main form{  /* значения по умолчанию */
+    display: flex;  /* включили гибкое форматирование */
+}
+ /*1   */
+.main, .section,  .centre{
+	flex-direction: column; /* направление главнеой оси в ряд*/
+}
+ /*2   */
+.content>form, .article>.line{
+    justify-content: space-around; /* распределение содержимого  по главной оси */ 
+}
+.main, .title,  .content, .centre>div[data-line]{
+    justify-content: center; /* распределение содержимого  по главной оси */ 
+}
+
+.centre>div[data-line]>input, .section>div{
+    justify-content: flex-start; /* распределение содержимого  по главной оси */ 
+}
+.centre>div[data-line]>div, div[data-block='controllers']>div{
+    justify-content: center; /* распределение содержимого  по главной оси */ 
+}
+.centre>div[data-line="formats"]>div{
+    justify-content: flex-end; /* распределение содержимого  по главной оси */ 
+}
+
+ .table>.line{
+    justify-content: space-between;     
+ }
+
+ /*3 */
+.centre>div[data-line='pole']{
+    align-items:flex-start  ; /* выравнивание в поперечной оси */  
+}
+.centre>div[data-display], .centre>div[data-line]>div, .centre>div[data-line]>input, div[data-block='controllers']>div{
+    align-items:center ; /* выравнивание в поперечной оси */   
+}
+
+ /*4 */
+.centre>div[data-line='pole'], .centre,  .section{
+    flex-grow: 1;  
+}
+
+.centre>div[data-line]{
+    flex-wrap:wrap; /* перенос блоков */ 
+}
+
+.centre{
+    flex-basis: 45em; 
+}
+.section{
+    flex-basis: 5em; 
+} 
+
+/* ----------------   flax  -------------- */
+.mine {
+    width:100%;
+	height:100%;
+    overflow:auto;
+}
+.centre>div[data-line='pole']{
+	max-height:60vh;
+	overflow:auto;
+}
+
+
+/*5 */
+ 
+.section>div{
+	margin: 0.5em;	
+}
+.main>.top{
+	padding: 15px;
+	margin: auto;
+}
+/*5 */
+div, input, select{
+    font-size:  20px;    
+    font-family:  serif;  
+}
+
+.top{
+    font-size:  1.4em;  
+}  
+
+
+
+
+input::placeholder {
+    color: rgb(120, 120, 120);
+    opacity:0.7;	
+}
+input:hover{
+	 /*width: 10ex;*/
+	 background-color: white;
+}
+
+
+input{
+    background-color:rgba(205, 214, 219, 0);
+    border:none;
+	padding: 5px 20px;
+	margin: 5px 5px;
+}
+
+div[data-line]>div{
+    border:none;
+	padding: 2px 5px;
+	margin:  2px 5px;
+}
+
+.page_name{
+    font-size:  30px;
+	text-align: center;
+	padding: 20px;
+}
+
+/*10 animation*/
+
+div[data-click]:hover {
+    background-color: rgb(200, 200, 200);
+}
+div[data-click]{
+    border-style: outset;
+    user-select: none;
+    border-radius: 10px; 
+	padding: 5px 10px;
+	margin:5px;
+}
+div[data-click]:active, div[data-in='1'], div[data-chose='1'] {
+    border-style:inset;
+    background-color: rgb(240, 255, 240);
+}
+
+body{
+    background: url(fon.jpg) repeat; /* Параметры фона */  
+}
+
+div[data-click='get'] {
+    background: url(png/out.png) no-repeat;
+}
+div[data-click='set'] {
+    background: url(png/in.png) no-repeat;
+}
+
+div[data-click='service'] {
+    background: url(png/service.png) no-repeat;
+}
+div[data-click='recovery'] {
+    background: url(png/recovery_staff.png) no-repeat;
+}
+div[data-click='typical'] {
+    background: url(png/check_domain.png) no-repeat;
+}
+div[data-click='clear'] {
+    background: url(png/clear.png) no-repeat;
+}
+
+div[data-click] {
+  width: 2em;
+  height: 2em;
+  background-size: 70%;
+  background-position: center;
+  max-width:5em;
+}
+
+div[data-line]>div[data-click] {
+  min-width:3em;
+}
+
+div[data-click] {
+	opacity: 0.2;
+}
+div[data-block='controllers']>div{
+	opacity: 1;	
+}
+#pole{
+	overflow:auto;
+}
+.centre>div[data-line="formats"]{
+
+}
+div[data-click="get"], div[data-click="set"]{
+	visibility: hidden;
+}
+.centre>div[data-line="Controls"]>input{
+    max-width: 5em;
+}

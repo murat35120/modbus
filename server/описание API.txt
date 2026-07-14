@@ -1,0 +1,99 @@
+Сервер автоматически находит и подключается к конвертерам Z-397 web работающий в режиме сервер.
+В режиме клиент конвертер сам устанавливает соединение с сервером.
+Информация о подключенных конвертерах хранится в массиве converters  объектов converter.
+Важно! в настройках конвертера необходимо указать
+[RS485]
+LINE1_BAUD=38400
+LINE2_BAUD=38400
+
+
+После подключения конвертера, сервер начинает сканировать сетевые (RS485) адреса c 0-30.
+Если сервер получает ответ, то этот адрес добавляется в список подключенных контроллеров.
+Информация о подключенных контроллерах хранится в объекте controllers объектов controller.
+
+Управление сервером выполняется по протоколу websocket, адрес можно получить в консоли сервера
+WS Server running at://192.168.0.103:9090
+
+Демонстрационная страница доступна по адресу указанному в консоли сервера
+HTTP Server running at http://192.168.0.103:8080
+
+----------------------------------------------------------------
+
+Команды API
+
+запрос
+	ответ
+
+--------------------------------------------------------------
+
+converters_list - запрос списка конвертеров
+controllers_list - запрос списка контроллеров
+
+{"api_key":"1356_api","api":"converters_list"}
+	{"check_admin":1,"api":"converters_list","list":{"0":{"model":"Z397-WEB","number":"40541","version":"4.0.9"}}}
+{"api_key":"1356_api","api":"controllers_list"}
+	{"check_admin":1,"api":"controllers_list","list":{"37_24688":{"type":37,"number":24688,"address":2,"triggers":[]},"37_26536":{"type":37,"number":26536,"address":3,"triggers":[]}}}
+
+api_key - ключ доступа к API
+check_admin - подтверждение, ключ принят
+
+api - команда api, которую необходимо выполнить
+list - объект запрошенных объектов (конвертеры, контроллеры, триггеры и тд)
+address - сетевой (RS485) адрес контроллера
+triggers - список установленных триггеров
+
+
+-----------------------------------------------------------------
+
+triggers_type - запрос описания доступных к установке триггеров
+
+
+{"api_key":"1356_api","api":"triggers_type"}
+	{"check_admin":1,"api":"triggers_type","list":{"led":{"byte_num":3,"bits":1},"zumm":{"byte_num":3,"bits":2},"sound":{"byte_num":3,"bits":4},"lock":{"byte_num":3,"bits":8},"tm":{"byte_num":4,"bits":4},"card_in":{"byte_num":4,"bits":8},"exit":{"byte_num":4,"bits":1},"card_out":{"byte_num":4,"bits":2},"reader":{"byte_num":4,"bits":16},"door":{"byte_num":4,"bits":32},"v_door":{"byte_num":11,"bits":127},"v_led":{"byte_num":12,"bits":127},"v_zp":{"byte_num":13,"bits":127},"v_12":{"byte_num":14,"bits":127},"va_door":{"byte_num":11,"min":-20,"max":100,"dev":10},"va_led":{"byte_num":12,"min":-20,"max":100,"dev":10},"va_zp":{"byte_num":13,"min":-20,"max":100,"dev":10},"va_12":{"byte_num":14,"min":-20,"max":100,"dev":10}}}
+
+-----------------------------------------------------------------------
+
+trigger_add - добавить триггер
+trigger_dell - удалить триггер
+
+
+{"api_key":"1356_api","api":"trigger_add","controller":"37_24688","type":"card_out","sost":2}
+	{"check_admin":1,"api":"trigger_add","ok":1,"controller":"37_24688","triggers":[{"byte_num":4,"bits":2,"type":"card_out","sost":2,"temp":false}]}
+{"api_key":"1356_api","api":"trigger_add","controller":"37_24688","type":"va_zp","min":"0","max":"128","dev":"10"}
+	{"check_admin":1,"api":"trigger_add","ok":1,"controller":"37_24688","triggers":[{"byte_num":4,"bits":2,"type":"card_out","sost":2,"temp":false},{"byte_num":13,"min":"0","max":"128","dev":"10","type":"va_zp","temp":false}]}
+{"api_key":"1356_api","api":"trigger_dell","controller":"37_24688","trigger_id":"1"}
+	{"check_admin":1,"api":"trigger_dell","ok":1,"controller":"37_24688","triggers":[{"byte_num":4,"bits":2,"type":"card_out","sost":2,"temp":false}]}
+
+type - название триггера
+byte_num  - номер байта, есть в описании тригера
+bits - номер бита,  есть в описании тригера
+sost - значение указанного бита для срабатывания триггера
+min - минимальный порог срабатывание триггера, условные значения от0 до 255
+max - максимальный порог срабатывание триггера, условные значения от0 до 255
+dev - порог чувствительности, отклонение от основного значения
+
+--------------------------------------------------------------------------------
+
+
+Команды управления выходами контроллера
+
+green - команда включить канал индикации green
+"api":"red"
+"api":"lock"
+"api":"d0"
+"api":"d1"
+
+{"api_key":"1356_api","api":"green","controller":"37_24688","interval":"3"}
+	{"check_admin":1,"api":"green","ok":1}
+
+interval - время включения в секундах, значение может быть не целым и отрицательным
+
+--------------------------------------------------------------------------------
+
+new_address - устанавливает новый сетевой (RS485) адрес контроллеру 
+
+{"api_key":"1356_api","api":"new_address","controller":"37_24688","new_adr":"4"}
+	{"check_admin":1,"api":"new_address","ok":1}
+
+
+
