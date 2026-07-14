@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "z397-web-manager",
   "version": "1.0.0",
   "description": "Native Node.js server for managing Z-397 Web converters (RS485 to Ethernet)",
@@ -25,4 +26,22 @@
   "engines": {
     "node": ">=14.0.0"
   }
+=======
+  "name": "node_server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "adm-zip": "^0.5.9",
+    "nexe": "^4.0.0-beta.19",
+    "utf-8-validate": "^5.0.5",
+    "ws": "^7.4.5"
+  },
+  "scripts": {
+    "build": "node build.js && nexe Script.js -r \"resources.zip\" -t windows-x86-12.16.3 && nexe --build"
+  },
+  "author": "Murat",
+  "license": "ISC",
+  "devDependencies": {},
+  "description": ""
+>>>>>>> b819409a909ae4c7af21a2e3fa01ef50d18e3079
 }

@@ -1,0 +1,131 @@
+div, input, select{  /* значения по умолчанию */
+    display: flex;  /* включили гибкое форматирование */
+}
+ /*1   */
+.directionColumn, div[data-clss="screen"], div[data-id="main"]>div, div[data-id="footer"], div[data-id="loginPass"], div[data-id="blockHeader"], div[data-id="blockIn"], div[data-id="controllerList"], div[data-id="ControllerInfo"], div[data-id="settingsWidows"], div[data-id="triggersList"], div[data-id="triggersView"], div[data-id="logWindow"]{
+	flex-direction: column; /* направление главнеой оси в ряд*/
+}
+ /*2   */
+.justifyAround, div[data-id="header"], div[data-id="headerFoot"]{
+    justify-content: space-around; /* распределение содержимого  по главной оси */ 
+}
+.justifyBetween, div[data-id="main"], div[data-clss="screen"], div[data-id="mainArticle"]{
+    justify-content: space-between; /* распределение содержимого  по главной оси */ 
+}
+.justifyCenter, div[data-id="offer"], div[data-id="slogan"], div[data-id="blockIn"], div[data-id="buttons"],div[data-id="loginPass"]>div, div[data-id="settingButtons"],  div[data-id="triggersList"]>div,  div[data-id="triggersList"]>div>div{
+    justify-content: center; /* распределение содержимого  по главной оси */ 
+}
+.justifyEnd, div[data-id="loginPass"]>div>div, div[data-id="ControllerInfo"]>div>div:first-child{
+    justify-content: end; /* распределение содержимого  по главной оси */ 
+}
+ /*3 */
+.alignCenter, div[data-id="main"]>div{
+    align-items:center  ; /* выравнивание в поперечной оси */  
+}
+
+ /*4 */
+.grow, div[data-id="main"], div[data-id="article"]{
+    flex-grow: 1;  
+}
+
+div[data-id="article"]{
+    flex-basis: 30em; 
+}
+.textAlignCenter, div[data-id="slogan"], div[data-id="header"], div[data-id="commandsList"]>div>input{
+	text-align: center;
+}
+
+.wrap{
+    flex-wrap: wrap; 
+}	
+	
+/* ----------------   flax  -------------- */
+div[data-clss="screen"]{
+    width:100%;
+	height:100%;
+    overflow:auto;
+}
+div[data-id="mainArticle"] {
+    width:calc(100% - 50px);
+	height:80%;
+    overflow:auto;
+}
+
+/*5 */
+div, input, select{
+    font-size:  20px;    
+    font-family:  Sans-serif;  
+}
+
+input{
+	opacity:0.5;
+}
+
+div[data-id="header"]{
+    font-size:  3em; 
+}  
+div[data-id="slogan"]{
+    font-family: Cursive; 
+	margin: 0 20px 20px 20px;	
+}
+
+div[data-id="blockIn"]{
+    background-color: rgb(200, 200, 200);    
+}
+
+
+input::placeholder {
+    color: rgb(120, 120, 120);
+    opacity:0.7;	
+}
+div[data-id="loginPass"]>div>input:hover{
+	 opacity:1;
+}
+
+.NameAndSelect,  div[data-block="valueTrigger"], div[data-block="valueTrigger"]>* {
+	padding: 1px 5px;
+	margin: 1px 5px;
+}
+
+div[data-id="loginPass"]>div>input, div[data-id="loginPass"]>div>div, div[data-id="ControllerInfo"]>div>div,  div[data-id="triggersView"]>div>div,  div[data-id="triggersView"]>div>div>div, div[data-id="commandsList"]>div>input{
+    border:none;
+	padding: 5px;
+	margin: 5px;
+	width:6em;
+}
+div[data-id="blockIn"], div[data-id="mainArticle"]{
+	margin: auto;
+	padding: 20px;
+	background-color: rgba(230, 230, 230, 0.5);
+	border-radius: 10px;
+}
+
+/*10 animation*/
+
+div[data-click]:hover {
+    background-color: rgb(200, 200, 200);
+}
+div[data-click]{
+    border-style: outset;
+    user-select: none;
+    border-radius: 10px; 
+	padding: 5px 10px;
+	margin:5px;
+}
+div[data-click]:active, div[data-down='1'] {
+    border-style:inset;
+    background-color: rgb(240, 255, 240);
+}
+
+
+body{
+    background: url(fon.jpg) repeat; /* Параметры фона */  
+}
+
+div[data-id="blockIn"]{
+	display: none;
+}
+
+div[data-display='0']{
+	display: none;
+}
