@@ -1,0 +1,2937 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>СКУД Администрирование v3.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0e1a;
+            color: #e8edf5;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0e1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3a5c;
+            border-radius: 3px;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #141b2d;
+            border-bottom: 1px solid #2a3a5c;
+            padding: 10px 24px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .app-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4a7aff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .app-header .logo-icon {
+            font-size: 24px;
+            -webkit-text-fill-color: initial;
+        }
+
+        .app-header .version {
+            font-size: 11px;
+            color: #556688;
+            font-weight: 400;
+            -webkit-text-fill-color: #556688;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #8899bb;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .status-dot.connected {
+            background: #22c55e;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+        }
+
+        .status-dot.disconnected {
+            background: #ef4444;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .api-key-input {
+            background: #0f1629;
+            border: 1px solid #2a3a5c;
+            border-radius: 6px;
+            padding: 5px 12px;
+            color: #e8edf5;
+            font-size: 13px;
+            width: 120px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .api-key-input:focus {
+            border-color: #4a7aff;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.25s;
+            white-space: nowrap;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: #4a7aff;
+            color: #fff;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #3a5fd9;
+            box-shadow: 0 0 20px rgba(74, 122, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #22c55e;
+            color: #fff;
+        }
+        .btn-success:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+        .btn-danger:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #2a3a5c;
+            color: #8899bb;
+        }
+        .btn-outline:hover:not(:disabled) {
+            border-color: #8899bb;
+            color: #e8edf5;
+            background: #1e2a45;
+        }
+
+        .btn-sm {
+            padding: 3px 10px;
+            font-size: 12px;
+        }
+
+        .nav-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            background: #141b2d;
+            border-bottom: 1px solid #2a3a5c;
+            padding: 6px 24px;
+            flex-shrink: 0;
+        }
+
+        .nav-tab {
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #8899bb;
+            transition: all 0.25s;
+            background: transparent;
+            border: none;
+        }
+
+        .nav-tab:hover {
+            color: #e8edf5;
+            background: #1e2a45;
+        }
+
+        .nav-tab.active {
+            background: #4a7aff;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(74, 122, 255, 0.3);
+        }
+
+        .app-main {
+            flex: 1;
+            overflow: hidden;
+            padding: 12px 24px 20px 24px;
+        }
+
+        .page {
+            display: none;
+            height: 100%;
+            overflow: auto;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            height: 100%;
+            min-height: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .page-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+            background: #141b2d;
+            border-radius: 12px;
+            border: 1px solid #2a3a5c;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid #2a3a5c;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .card-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .card-header .badge {
+            font-size: 11px;
+            background: #0a0e1a;
+            padding: 2px 10px;
+            border-radius: 12px;
+            color: #8899bb;
+            border: 1px solid #2a3a5c;
+        }
+
+        .card-body {
+            padding: 12px 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: #0f1629;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-item .stat-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #4a7aff;
+        }
+
+        .stat-item .stat-value.controllers {
+            color: #4a7aff;
+        }
+        .stat-item .stat-value.converters {
+            color: #22c55e;
+        }
+        .stat-item .stat-value.groups {
+            color: #8b5cf6;
+        }
+        .stat-item .stat-value.checks {
+            color: #f59e0b;
+        }
+        .stat-item .stat-value.tests {
+            color: #06b6d4;
+        }
+        .stat-item .stat-value.results {
+            color: #f59e0b;
+        }
+
+        .stat-item .stat-label {
+            font-size: 12px;
+            color: #8899bb;
+        }
+
+        .dashboard-log-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #2a3a5c;
+        }
+
+        .dashboard-log-label {
+            font-size: 13px;
+            color: #8899bb;
+        }
+
+        .dashboard-log {
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 12px;
+            color: #8899bb;
+            margin-top: 4px;
+        }
+
+        .dashboard-log .log-entry {
+            display: flex;
+            gap: 6px;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(42, 58, 92, 0.15);
+        }
+
+        .dashboard-log .log-entry .time {
+            color: #556688;
+        }
+
+        .dashboard-log .log-entry .icon {
+            width: 18px;
+            text-align: center;
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+        }
+
+        .quick-actions-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .field-group {
+            margin-bottom: 10px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 12px;
+            color: #8899bb;
+            margin-bottom: 2px;
+        }
+
+        .field-input {
+            background: #0f1629;
+            border: 1px solid #2a3a5c;
+            border-radius: 4px;
+            padding: 5px 10px;
+            color: #e8edf5;
+            font-size: 13px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .field-input:focus {
+            border-color: #4a7aff;
+        }
+
+        .constructor-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 16px;
+            height: 100%;
+            min-height: 0;
+        }
+
+        @media (max-width: 768px) {
+            .constructor-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .constructor-tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .constructor-tabs .type-btn {
+            font-size: 12px;
+            padding: 3px 10px;
+        }
+
+        .constructor-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .obj-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .obj-list .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            font-size: 13px;
+            transition: all 0.15s;
+            border-left: 2px solid transparent;
+        }
+
+        .obj-list .item:hover {
+            background: #1e2a45;
+        }
+
+        .obj-list .item.active {
+            background: #4a7aff;
+            color: #fff;
+            border-left-color: #4a7aff;
+        }
+
+        .obj-list .item .del-btn {
+            color: #556688;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0 4px;
+            border: none;
+            background: none;
+            transition: color 0.2s;
+        }
+
+        .obj-list .item .del-btn:hover {
+            color: #ef4444;
+        }
+
+        .obj-list .item .info {
+            font-size: 11px;
+            color: #556688;
+        }
+
+        .obj-list .item.active .info {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: #8899bb;
+        }
+
+        .empty-state .icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        .json-preview {
+            background: #0f1629;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            color: #a5b4fc;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            border: 1px solid #2a3a5c;
+            max-height: 120px;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            color: #8899bb;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: #1e2a45;
+            color: #e8edf5;
+        }
+
+        .btn-icon.danger:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .list-container {
+            max-height: 120px;
+            overflow-y: auto;
+            border: 1px solid #2a3a5c;
+            border-radius: 4px;
+            background: #0a0e1a;
+        }
+
+        .list-container .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3px 10px;
+            border-bottom: 1px solid rgba(42, 58, 92, 0.2);
+            font-size: 13px;
+        }
+
+        .list-container .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-container .list-empty {
+            padding: 10px;
+            text-align: center;
+            color: #556688;
+            font-size: 12px;
+        }
+
+        .add-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: end;
+            margin-bottom: 6px;
+        }
+
+        .add-row .field-group {
+            margin-bottom: 0;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .add-row .field-group .field-label {
+            font-size: 11px;
+        }
+
+        .ctrl-item {
+            background: #0f1629;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border-left: 3px solid #4a7aff;
+        }
+
+        .ctrl-item .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .ctrl-item .name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .ctrl-item .details {
+            font-size: 12px;
+            color: #8899bb;
+        }
+
+        .ctrl-item .status-badge {
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: #22c55e;
+            color: #0a0e1a;
+        }
+
+        .ctrl-item .status-badge.inactive {
+            background: #2a3a5c;
+            color: #8899bb;
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 380px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 8px;
+            background: #141b2d;
+            border: 1px solid #2a3a5c;
+            color: #e8edf5;
+            font-size: 13px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            animation: toastIn 0.3s ease;
+        }
+
+        .toast.success {
+            border-color: #22c55e;
+        }
+        .toast.error {
+            border-color: #ef4444;
+        }
+        .toast.warning {
+            border-color: #f59e0b;
+        }
+        .toast.info {
+            border-color: #06b6d4;
+        }
+
+        .toast .toast-icon {
+            font-size: 18px;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.out {
+            animation: toastOut 0.3s ease forwards;
+        }
+
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #141b2d;
+            border-radius: 12px;
+            border: 1px solid #2a3a5c;
+            padding: 24px 28px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            animation: modalIn 0.25s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-box h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .modal-box p {
+            color: #8899bb;
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .modal-box .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 640px) {
+            .app-header {
+                padding: 8px 12px;
+            }
+            .app-header .logo {
+                font-size: 15px;
+            }
+            .app-main {
+                padding: 8px 12px 12px 12px;
+            }
+            .nav-bar {
+                padding: 4px 12px;
+            }
+            .nav-tab {
+                padding: 4px 10px;
+                font-size: 12px;
+            }
+            .api-key-input {
+                width: 80px;
+                font-size: 12px;
+            }
+            .btn {
+                font-size: 12px;
+                padding: 4px 10px;
+            }
+            .constructor-grid {
+                grid-template-columns: 1fr;
+            }
+            .page-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-box {
+                padding: 16px 18px;
+                width: 95%;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .quick-actions-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOAST -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <h3 id="modalTitle">⚠️ Подтверждение</h3>
+            <p id="modalMessage">Вы уверены?</p>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="modalCancel">Отмена</button>
+                <button class="btn btn-danger" id="modalConfirm">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <div class="app-container">
+
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">🎛️</span>
+                СКУД Администрирование
+                <span class="version">v3.0</span>
+            </div>
+            <div class="header-right">
+                <div class="status-indicator">
+                    <span class="status-dot disconnected" id="wsStatusDot"></span>
+                    <span id="wsStatusText">Отключено</span>
+                </div>
+                <input type="password" class="api-key-input" id="apiKey" value="1356_api" placeholder="API ключ">
+                <button class="btn btn-primary" id="connectBtn">🔗 Подключить</button>
+                <button class="btn btn-danger" id="disconnectBtn" disabled>❌ Отключить</button>
+                <a href="runner.html" class="btn btn-outline">▶️ Исполнение</a>
+            </div>
+        </header>
+
+        <!-- NAVIGATION -->
+        <nav class="nav-bar" id="navBar">
+            <button class="nav-tab active" data-page="dashboard">📊 Панель</button>
+            <button class="nav-tab" data-page="constructor">🔧 Конструктор</button>
+            <button class="nav-tab" data-page="controllers">🎯 Контроллеры</button>
+        </nav>
+
+        <!-- MAIN -->
+        <main class="app-main">
+
+            <!-- DASHBOARD -->
+            <div class="page active" id="page-dashboard">
+                <div class="page-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📊 Статистика</h3>
+                            <span class="badge" id="statsTime">--</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-value controllers" id="statControllers">0</div>
+                                    <div class="stat-label">Контроллеров</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value converters" id="statConverters">0</div>
+                                    <div class="stat-label">Конвертеров</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value groups" id="statGroups">0</div>
+                                    <div class="stat-label">Групп</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value checks" id="statChecks">0</div>
+                                    <div class="stat-label">Проверок</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value tests" id="statTests">0</div>
+                                    <div class="stat-label">Тестов</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value results" id="statResults">0</div>
+                                    <div class="stat-label">Результатов</div>
+                                </div>
+                            </div>
+                            <div class="dashboard-log-section">
+                                <div class="dashboard-log-label">📌 Последние события</div>
+                                <div id="dashboardLog" class="dashboard-log"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>⚡ Быстрые действия</h3>
+                            <span class="badge">Выберите контроллер</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="field-group">
+                                <label class="field-label">Контроллер</label>
+                                <select class="field-input" id="quickController">
+                                    <option value="">-- выберите --</option>
+                                </select>
+                            </div>
+                            <div class="quick-actions-grid">
+                                <button class="btn btn-success quick-cmd" data-cmd="green">🟢 Зеленый</button>
+                                <button class="btn btn-danger quick-cmd" data-cmd="red">🔴 Красный</button>
+                                <button class="btn btn-warning quick-cmd" data-cmd="sound">🔊 Звук</button>
+                                <button class="btn btn-primary quick-cmd" data-cmd="lock">🔒 Замок</button>
+                                <button class="btn btn-outline quick-cmd" data-cmd="d0">🔘 D0</button>
+                                <button class="btn btn-outline quick-cmd" data-cmd="d1">🔘 D1</button>
+                            </div>
+                            <div class="quick-actions-row">
+                                <button class="btn btn-primary btn-sm" id="quickRefresh">🔄 Обновить</button>
+                                <button class="btn btn-warning btn-sm" id="quickScan">🔍 Поиск</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONSTRUCTOR -->
+            <div class="page" id="page-constructor">
+                <div class="constructor-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📁 Объекты</h3>
+                            <span class="badge" id="constructorCount">0</span>
+                        </div>
+                        <div class="card-body" style="padding:8px 12px;">
+                            <div class="constructor-tabs">
+                                <button class="btn btn-sm btn-outline type-btn active" data-type="stands">🏗️ Стенды</button>
+                                <button class="btn btn-sm btn-outline type-btn" data-type="diagrams">📐 Схемы</button>
+                                <button class="btn btn-sm btn-outline type-btn" data-type="tests">🧪 Тесты</button>
+                                <button class="btn btn-sm btn-outline type-btn" data-type="checks">✅ Проверки</button>
+                                <button class="btn btn-sm btn-outline type-btn" data-type="groups">📁 Группы</button>
+                            </div>
+                            <div id="constructorList" class="obj-list">
+                                <div class="empty-state">
+                                    <div class="icon">📂</div>
+                                    <p>Нет объектов</p>
+                                </div>
+                            </div>
+                            <div class="constructor-actions">
+                                <button class="btn btn-sm btn-success" id="constructorNew">➕ Создать</button>
+                                <button class="btn btn-sm btn-danger" id="constructorDelete">🗑️ Удалить</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 id="constructorFormTitle">📝 Редактор</h3>
+                            <span class="badge" id="constructorFormType">стенд</span>
+                        </div>
+                        <div class="card-body constructor-form" id="constructorForm">
+                            <div id="editorContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTROLLERS -->
+            <div class="page" id="page-controllers">
+                <div class="page-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🎯 Контроллеры</h3>
+                            <span class="badge" id="ctrlCount">0</span>
+                        </div>
+                        <div class="card-body" id="controllersList">
+                            <div class="empty-state"><div class="icon">🔍</div><p>Поиск контроллеров...</p></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🔌 Конвертеры</h3>
+                            <span class="badge" id="convCount">0</span>
+                        </div>
+                        <div class="card-body" id="convertersList">
+                            <div class="empty-state"><div class="icon">🔌</div><p>Нет подключенных конвертеров</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ============================================================
+    JAVASCRIPT — ВСЯ ЛОГИКА В ОДНОМ ФАЙЛЕ
+    ============================================================ -->
+    <script>
+        // ============================================================
+        // КОНСТАНТЫ
+        // ============================================================
+
+        const CMD_LIST = [
+            { value: 'green', label: '🟢 Зеленый', unit: 'сек' },
+            { value: 'red', label: '🔴 Красный', unit: 'сек' },
+            { value: 'sound', label: '🔊 Звук', unit: 'сек' },
+            { value: 'lock', label: '🔒 Замок', unit: 'сек' },
+            { value: 'd0', label: '🔘 D0', unit: 'сек' },
+            { value: 'd1', label: '🔘 D1', unit: 'сек' },
+            { value: 'open_for_out', label: '🚪 Открыть (выход)', unit: 'сек' },
+            { value: 'open_for_in', label: '🚪 Открыть (вход)', unit: 'сек' },
+            { value: 'new_address', label: '📝 Сменить адрес', unit: '' }
+        ];
+
+        const TRIGGER_LIST = [
+            { value: 'door', label: '🚪 Дверь', states: { 0: 'Закрыта', 32: 'Открыта' } },
+            { value: 'led', label: '💡 Светодиод', states: { 0: 'Выключен', 1: 'Включен' } },
+            { value: 'zumm', label: '🔊 Зуммер', states: { 0: 'Выключен', 2: 'Включен' } },
+            { value: 'sound', label: '🔊 Звук', states: { 0: 'Выключен', 4: 'Включен' } },
+            { value: 'lock', label: '🔒 Замок', states: { 0: 'Закрыт', 8: 'Открыт' } },
+            { value: 'tm', label: '⏰ Таймер', states: { 0: 'Не активен', 4: 'Активен' } },
+            { value: 'card_in', label: '💳 Карта (вход)', states: { 0: 'Нет карты', 8: 'Приложена' } },
+            { value: 'card_out', label: '💳 Карта (выход)', states: { 0: 'Нет карты', 2: 'Приложена' } },
+            { value: 'exit', label: '🚪 Кнопка выхода', states: { 0: 'Не нажата', 1: 'Нажата' } },
+            { value: 'reader', label: '📡 Считыватель', states: { 0: 'Не активен', 16: 'Активен' } },
+            { value: 'va_door', label: '📊 Дверь (аналог)', isVA: true },
+            { value: 'va_led', label: '📊 Светодиод (аналог)', isVA: true },
+            { value: 'va_zp', label: '📊 ЗП (аналог)', isVA: true },
+            { value: 'va_12', label: '📊 12V (аналог)', isVA: true }
+        ];
+
+        // ============================================================
+        // STATE
+        // ============================================================
+
+        const state = {
+            ws: null,
+            connected: false,
+            apiKey: '1356_api',
+            controllers: {},
+            converters: {},
+            currentPage: 'dashboard',
+            constructorType: 'stands',
+            constructorSelected: null,
+            constructorData: null,
+            groupsCount: 0,
+            checksCount: 0,
+            testsCount: 0,
+            results: [],
+            allTests: [],
+            allChecks: [],
+            allStands: [],
+            allDiagrams: [],
+            modalResolve: null
+        };
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+
+        const $ = id => document.getElementById(id);
+        const $$ = sel => document.querySelectorAll(sel);
+
+        const dom = {
+            wsStatusDot: $('wsStatusDot'),
+            wsStatusText: $('wsStatusText'),
+            connectBtn: $('connectBtn'),
+            disconnectBtn: $('disconnectBtn'),
+            apiKey: $('apiKey'),
+            navBar: $('navBar'),
+            pages: {
+                dashboard: $('page-dashboard'),
+                constructor: $('page-constructor'),
+                controllers: $('page-controllers')
+            },
+            statControllers: $('statControllers'),
+            statConverters: $('statConverters'),
+            statGroups: $('statGroups'),
+            statChecks: $('statChecks'),
+            statTests: $('statTests'),
+            statResults: $('statResults'),
+            statsTime: $('statsTime'),
+            dashboardLog: $('dashboardLog'),
+            quickController: $('quickController'),
+            quickRefresh: $('quickRefresh'),
+            quickScan: $('quickScan'),
+            constructorList: $('constructorList'),
+            constructorCount: $('constructorCount'),
+            constructorFormTitle: $('constructorFormTitle'),
+            constructorFormType: $('constructorFormType'),
+            constructorNew: $('constructorNew'),
+            constructorDelete: $('constructorDelete'),
+            editorContainer: $('editorContainer'),
+            typeBtns: $$('.type-btn'),
+            controllersList: $('controllersList'),
+            convertersList: $('convertersList'),
+            ctrlCount: $('ctrlCount'),
+            convCount: $('convCount')
+        };
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span class="toast-icon">${icons[type] || 'ℹ️'}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('out');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ============================================================
+        // MODAL
+        // ============================================================
+
+        function showModal(title, message, confirmText = 'Удалить') {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('modalOverlay');
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalMessage').textContent = message;
+                document.getElementById('modalConfirm').textContent = confirmText;
+                overlay.classList.add('show');
+                state.modalResolve = resolve;
+            });
+        }
+
+        document.getElementById('modalCancel').addEventListener('click', () => {
+            document.getElementById('modalOverlay').classList.remove('show');
+            if (state.modalResolve) { state.modalResolve(false);
+                state.modalResolve = null; }
+        });
+
+        document.getElementById('modalConfirm').addEventListener('click', () => {
+            document.getElementById('modalOverlay').classList.remove('show');
+            if (state.modalResolve) { state.modalResolve(true);
+                state.modalResolve = null; }
+        });
+
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                document.getElementById('modalOverlay').classList.remove('show');
+                if (state.modalResolve) { state.modalResolve(false);
+                    state.modalResolve = null; }
+            }
+        });
+
+        // ============================================================
+        // LOGGING
+        // ============================================================
+
+        function addLog(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const icons = { send: '➡️', receive: '⬅️', error: '❌', info: 'ℹ️', warning: '⚠️', success: '✅' };
+            const el = document.createElement('div');
+            el.className = 'log-entry';
+            el.innerHTML =
+                `<span class="time">${time}</span><span class="icon">${icons[type] || '•'}</span><span>${message}</span>`;
+            dom.dashboardLog.prepend(el);
+            while (dom.dashboardLog.children.length > 30) {
+                dom.dashboardLog.removeChild(dom.dashboardLog.lastChild);
+            }
+            console.log(`[${time}] ${type}: ${message}`);
+        }
+
+        // ============================================================
+        // WEBSOCKET
+        // ============================================================
+
+        function updateStatus(connected) {
+            state.connected = connected;
+            const dot = dom.wsStatusDot;
+            const text = dom.wsStatusText;
+            if (connected) {
+                dot.className = 'status-dot connected';
+                text.textContent = 'Подключено';
+                dom.connectBtn.disabled = true;
+                dom.disconnectBtn.disabled = false;
+            } else {
+                dot.className = 'status-dot disconnected';
+                text.textContent = 'Отключено';
+                dom.connectBtn.disabled = false;
+                dom.disconnectBtn.disabled = true;
+            }
+        }
+
+        function connectWS() {
+            const host = window.location.hostname || 'localhost';
+            const url = `ws://${host}:9090`;
+
+            addLog(`Подключение к ${url}...`, 'info');
+
+            try {
+                state.ws = new WebSocket(url);
+
+                state.ws.onopen = function() {
+                    updateStatus(true);
+                    addLog('✅ Подключено к серверу', 'success');
+
+                    setTimeout(() => {
+                        sendCommand('controllers_list');
+                        sendCommand('converters_list');
+                        sendCommand('stands_list');
+                        sendCommand('diagrams_list');
+                        sendCommand('tests_list');
+                        sendCommand('checks_list');
+                        sendCommand('groups_list');
+                        sendCommand('available_controllers');
+                    }, 300);
+                };
+
+                state.ws.onclose = function() {
+                    updateStatus(false);
+                    addLog('❌ Соединение закрыто', 'error');
+                };
+
+                state.ws.onerror = function(err) {
+                    addLog(`⚠️ Ошибка: ${err.message || 'Неизвестная ошибка'}`, 'error');
+                };
+
+                state.ws.onmessage = function(event) {
+                    handleMessage(event.data);
+                };
+
+            } catch (err) {
+                addLog(`❌ Ошибка подключения: ${err.message}`, 'error');
+            }
+        }
+
+        function disconnectWS() {
+            if (state.ws) { state.ws.close();
+                state.ws = null; }
+            updateStatus(false);
+            addLog('Отключение от сервера', 'info');
+        }
+
+        // ============================================================
+        // SEND COMMAND
+        // ============================================================
+
+        function sendCommand(cmd, params = {}) {
+            if (!state.connected) {
+                addLog('❌ Нет подключения к серверу', 'error');
+                return false;
+            }
+            const apiKey = dom.apiKey.value.trim() || '1356_api';
+            const command = { api_key: apiKey, api: cmd };
+            for (const key in params) {
+                if (params.hasOwnProperty(key)) command[key] = params[key];
+            }
+            try {
+                const json = JSON.stringify(command);
+                state.ws.send(json);
+                const preview = json.length > 200 ? json.substring(0, 200) + '...' : json;
+                addLog(`📤 ${cmd}: ${preview}`, 'send');
+                return true;
+            } catch (err) {
+                addLog(`❌ Ошибка отправки: ${err.message}`, 'error');
+                return false;
+            }
+        }
+
+        // ============================================================
+        // HANDLE MESSAGE
+        // ============================================================
+
+        function handleMessage(data) {
+            try {
+                const json = JSON.parse(data);
+                console.log('📥 Получено:', json);
+
+                if (json.api) {
+                    addLog(`📥 Ответ: ${json.api}`, 'receive');
+                }
+
+                if (json.check_admin === 1) {
+                    handleApiResponse(json);
+                }
+
+                if (json.info) {
+                    addLog(`❌ ${json.info}`, 'error');
+                }
+                if (json.error) {
+                    addLog(`❌ ${json.error}`, 'error');
+                }
+
+            } catch (err) {
+                const preview = data.length > 100 ? data.substring(0, 100) + '...' : data;
+                addLog(`⚠️ Ошибка обработки: ${preview}`, 'error');
+                console.error('Ошибка обработки:', err);
+            }
+        }
+
+        // ============================================================
+        // HANDLE API RESPONSE
+        // ============================================================
+
+        function handleApiResponse(json) {
+            const api = json.api;
+
+            switch (api) {
+                case 'controllers_list':
+                    state.controllers = json.list || {};
+                    renderControllers();
+                    updateQuickController();
+                    updateStats();
+                    break;
+
+                case 'converters_list':
+                    state.converters = json.list || {};
+                    renderConverters();
+                    updateStats();
+                    break;
+
+                case 'stands_list':
+                    state.allStands = json.list || [];
+                    renderConstructorList(json.list || []);
+                    updateStandSelects(json.list || []);
+                    break;
+
+                case 'diagrams_list':
+                    state.allDiagrams = json.list || [];
+                    renderConstructorList(json.list || []);
+                    updateDiagramSelects(json.list || []);
+                    break;
+
+                case 'tests_list':
+                    state.allTests = json.list || [];
+                    state.testsCount = (json.list || []).length;
+                    renderConstructorList(json.list || []);
+                    updateTestSelects(json.list || []);
+                    updateStats();
+                    break;
+
+                case 'checks_list':
+                    state.allChecks = json.list || [];
+                    state.checksCount = (json.list || []).length;
+                    renderConstructorList(json.list || []);
+                    updateCheckSelects(json.list || []);
+                    updateStats();
+                    break;
+
+                case 'groups_list':
+                    state.groupsCount = (json.list || []).length;
+                    renderConstructorList(json.list || []);
+                    updateStats();
+                    break;
+
+                case 'stands_save':
+                case 'diagrams_save':
+                case 'tests_save':
+                case 'checks_save':
+                case 'groups_save':
+                    showToast(`✅ ${api} выполнен успешно`, 'success');
+                    sendCommand(`${state.constructorType}_list`);
+                    break;
+
+                case 'stands_delete':
+                case 'diagrams_delete':
+                case 'tests_delete':
+                case 'checks_delete':
+                case 'groups_delete':
+                    showToast(`🗑️ ${api} выполнен`, 'info');
+                    sendCommand(`${state.constructorType}_list`);
+                    break;
+
+                case 'stands_load':
+                case 'diagrams_load':
+                case 'tests_load':
+                case 'checks_load':
+                case 'groups_load':
+                    if (json.data) {
+                        state.constructorData = json.data;
+                        renderEditor(state.constructorType, json.data);
+                    }
+                    break;
+
+                case 'available_controllers':
+                    updateAvailableControllers(json.list || []);
+                    break;
+
+                default:
+                    if (json.ok) {
+                        addLog(`✅ ${api} выполнен`, 'success');
+                    }
+            }
+        }
+
+        // ============================================================
+        // RENDER FUNCTIONS
+        // ============================================================
+
+        function renderControllers() {
+            const list = dom.controllersList;
+            const keys = Object.keys(state.controllers);
+            if (keys.length === 0) {
+                list.innerHTML =
+                `<div class="empty-state"><div class="icon">🔍</div><p>Контроллеры не найдены</p></div>`;
+                dom.ctrlCount.textContent = '0';
+                return;
+            }
+            let html = '';
+            for (const key of keys) {
+                const c = state.controllers[key];
+                const active = c.active !== false;
+                html += `
+                    <div class="ctrl-item" data-id="${key}">
+                        <div class="row">
+                            <div>
+                                <div class="name">${key}</div>
+                                <div class="details">Адрес: ${c.address || '?'} | Тип: ${c.type || '?'} | SN: ${c.number || '?'}</div>
+                            </div>
+                            <div>
+                                <span class="status-badge${active ? '' : ' inactive'}">${active ? '🟢 Активен' : '⚪ Неактивен'}</span>
+                                <span class="text-xs text-muted" style="margin-left:6px;">Триггеров: ${c.triggers?.length || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            list.innerHTML = html;
+            dom.ctrlCount.textContent = keys.length;
+        }
+
+        function renderConverters() {
+            const list = dom.convertersList;
+            const keys = Object.keys(state.converters);
+            if (keys.length === 0) {
+                list.innerHTML =
+                `<div class="empty-state"><div class="icon">🔌</div><p>Нет подключенных конвертеров</p></div>`;
+                dom.convCount.textContent = '0';
+                return;
+            }
+            let html = '';
+            for (const key of keys) {
+                const c = state.converters[key];
+                html += `
+                    <div class="ctrl-item" style="border-left-color:var(--success);">
+                        <div class="row">
+                            <div>
+                                <div class="name">${c.model || 'Конвертер'} #${key}</div>
+                                <div class="details">SN: ${c.number || '?'} | Версия: ${c.version || '?'}</div>
+                            </div>
+                            <div>
+                                <span class="status-badge${c.connected !== false ? '' : ' inactive'}">${c.connected !== false ? '🟢 Подключен' : '⚪ Отключен'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            list.innerHTML = html;
+            dom.convCount.textContent = keys.length;
+        }
+
+        function updateQuickController() {
+            const select = dom.quickController;
+            const current = select.value;
+            select.innerHTML = '<option value="">-- выберите --</option>';
+            for (const key of Object.keys(state.controllers)) {
+                const c = state.controllers[key];
+                if (c.active !== false) {
+                    select.innerHTML += `<option value="${key}">${key}</option>`;
+                }
+            }
+            if (current && select.querySelector(`option[value="${current}"]`)) select.value = current;
+        }
+
+        function updateStats() {
+            dom.statControllers.textContent = Object.keys(state.controllers).length;
+            dom.statConverters.textContent = Object.keys(state.converters).length;
+            dom.statGroups.textContent = state.groupsCount || 0;
+            dom.statChecks.textContent = state.checksCount || 0;
+            dom.statTests.textContent = state.testsCount || 0;
+            dom.statResults.textContent = state.results.length || 0;
+            dom.statsTime.textContent = new Date().toLocaleTimeString();
+        }
+
+        function updateAvailableControllers(list) {
+            const select = document.getElementById('stand_controller_select');
+            if (select) {
+                const current = select.value;
+                select.innerHTML = '<option value="">-- выберите --</option>';
+                list.forEach(c => {
+                    select.innerHTML += `<option value="${c.id}">${c.id}</option>`;
+                });
+                if (current && select.querySelector(`option[value="${current}"]`)) select.value = current;
+            }
+        }
+
+        function updateStandSelects(list) {
+            // Для стендов в конструкторе
+        }
+
+        function updateDiagramSelects(list) {
+            const select = document.getElementById('stand_diagram_select');
+            if (select) {
+                const current = select.value;
+                select.innerHTML = '<option value="">-- выберите схему --</option>';
+                list.forEach(d => {
+                    select.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+                });
+                if (current && select.querySelector(`option[value="${current}"]`)) select.value = current;
+            }
+        }
+
+        function updateTestSelects(list) {
+            const select = document.getElementById('check_test_select');
+            if (select) {
+                const current = select.value;
+                select.innerHTML = '<option value="">-- выберите тест --</option>';
+                list.forEach(t => {
+                    select.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+                });
+                if (current && select.querySelector(`option[value="${current}"]`)) select.value = current;
+            }
+        }
+
+        function updateCheckSelects(list) {
+            const select = document.getElementById('group_check_select');
+            if (select) {
+                const current = select.value;
+                select.innerHTML = '<option value="">-- выберите проверку --</option>';
+                list.forEach(c => {
+                    select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+                });
+                if (current && select.querySelector(`option[value="${current}"]`)) select.value = current;
+            }
+        }
+
+        // ============================================================
+        // CONSTRUCTOR LIST
+        // ============================================================
+
+        function renderConstructorList(list) {
+            const container = dom.constructorList;
+            if (!list || list.length === 0) {
+                container.innerHTML =
+                `<div class="empty-state"><div class="icon">📂</div><p>Нет объектов</p></div>`;
+                dom.constructorCount.textContent = '0';
+                return;
+            }
+            let html = '';
+            for (const item of list) {
+                const name = item.name || 'Без названия';
+                const desc = item.description || '';
+                const isActive = state.constructorSelected === name;
+                html += `
+                    <div class="item ${isActive ? 'active' : ''}" data-name="${name}">
+                        <span>${name}</span>
+                        <span class="info">${desc.substring(0, 30)}${desc.length > 30 ? '...' : ''}</span>
+                        <button class="del-btn" data-name="${name}">✕</button>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            dom.constructorCount.textContent = list.length;
+
+            container.querySelectorAll('.item').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('del-btn')) return;
+                    const name = el.dataset.name;
+                    state.constructorSelected = name;
+                    sendCommand(`${state.constructorType}_load`, { name });
+                });
+                const del = el.querySelector('.del-btn');
+                if (del) {
+                    del.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const name = del.dataset.name;
+                        const confirmed = await showModal('Удаление объекта',
+                            `Вы уверены, что хотите удалить "${name}"?`, 'Удалить');
+                        if (confirmed) {
+                            sendCommand(`${state.constructorType}_delete`, { name });
+                            state.constructorSelected = null;
+                        }
+                    });
+                }
+            });
+        }
+
+        // ============================================================
+        // EDITOR RENDERER
+        // ============================================================
+
+        function renderEditor(type, data) {
+            const container = dom.editorContainer;
+            if (!container) return;
+            data = data || {};
+
+            let html = '';
+
+            switch (type) {
+                case 'stands':
+                    html = renderStandEditor(data);
+                    break;
+                case 'diagrams':
+                    html = renderDiagramEditor(data);
+                    break;
+                case 'tests':
+                    html = renderTestEditor(data);
+                    break;
+                case 'checks':
+                    html = renderCheckEditor(data);
+                    break;
+                case 'groups':
+                    html = renderGroupEditor(data);
+                    break;
+                default:
+                    html = '<div class="empty-state"><p>Выберите тип объекта</p></div>';
+            }
+
+            container.innerHTML = html;
+            dom.constructorFormTitle.textContent = getEditorTitle(type, data);
+            dom.constructorFormType.textContent = type.slice(0, -1);
+            initEditorHandlers(type, data);
+        }
+
+        function getEditorTitle(type, data) {
+            const names = {
+                stands: 'стенд',
+                diagrams: 'схему',
+                tests: 'тест',
+                checks: 'проверку',
+                groups: 'группу'
+            };
+            const action = data?.name ? 'Редактирование' : 'Создание';
+            return `${action} ${names[type] || 'объекта'}`;
+        }
+
+        // ============================================================
+        // EDITOR — СТЕНДЫ
+        // ============================================================
+
+        function renderStandEditor(data) {
+            const controllers = data.controllers || [];
+            const diagram = data.diagram || '';
+
+            const availableControllers = Object.keys(state.controllers);
+            const controllerOptions = availableControllers.map(c =>
+                `<option value="${c}">${c}</option>`
+            ).join('');
+
+            const diagramOptions = state.allDiagrams.map(d =>
+                `<option value="${d.name}" ${d.name === diagram ? 'selected' : ''}>${d.name}</option>`
+            ).join('');
+
+            return `
+                <div class="field-group">
+                    <label class="field-label">Название стенда</label>
+                    <input type="text" class="field-input" id="stand_name" value="${data.name || ''}" placeholder="Стенд_1">
+                    <div class="field-error" id="stand_name_error">Имя уже существует</div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Описание</label>
+                    <textarea class="field-textarea" id="stand_description" rows="2" placeholder="Описание стенда">${data.description || ''}</textarea>
+                </div>
+                <div class="field-group" style="border:1px solid var(--border); border-radius:6px; padding:10px; background:var(--bg-input);">
+                    <label class="field-label" style="font-weight:500;">🎯 Контроллеры</label>
+                    <div class="add-row">
+                        <div class="field-group">
+                            <label class="field-label">Добавить контроллер</label>
+                            <select class="field-input" id="stand_controller_select">
+                                <option value="">-- выберите --</option>
+                                ${controllerOptions}
+                            </select>
+                        </div>
+                        <button class="btn btn-success" id="stand_add_controller">➕ Добавить</button>
+                    </div>
+                    <div class="list-container" id="stand_controller_list">
+                        ${controllers.length === 0 ? '<div class="list-empty">Нет контроллеров</div>' :
+                            controllers.map((c, i) => `
+                                <div class="list-item" data-index="${i}">
+                                    <span>${c}</span>
+                                    <div>
+                                        ${i > 0 ? `<button class="btn-icon" data-action="move_stand_ctrl" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                                        ${i < controllers.length - 1 ? `<button class="btn-icon" data-action="move_stand_ctrl" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                                        <button class="btn-icon danger" data-action="remove_stand_ctrl" data-idx="${i}">✕</button>
+                                    </div>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Схема</label>
+                    <select class="field-input" id="stand_diagram_select">
+                        <option value="">-- выберите схему --</option>
+                        ${diagramOptions}
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">📋 Предпросмотр</label>
+                    <div class="json-preview" id="stand_preview">${JSON.stringify({ name: data.name || '', description: data.description || '', controllers, diagram }, null, 2)}</div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button class="btn btn-success" id="stand_save">💾 Сохранить</button>
+                    <button class="btn btn-outline" id="stand_cancel">Отмена</button>
+                </div>
+                <div id="stand_status" style="margin-top:6px; font-size:13px; color:var(--text-muted);"></div>
+            `;
+        }
+
+        // ============================================================
+        // EDITOR — СХЕМЫ
+        // ============================================================
+
+        function renderDiagramEditor(data) {
+            return `
+                <div class="field-group">
+                    <label class="field-label">Название схемы</label>
+                    <input type="text" class="field-input" id="diagram_name" value="${data.name || ''}" placeholder="Схема_стандартная">
+                    <div class="field-error" id="diagram_name_error">Имя уже существует</div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Описание</label>
+                    <textarea class="field-textarea" id="diagram_description" rows="2" placeholder="Описание схемы">${data.description || ''}</textarea>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">URL файла схемы (PDF)</label>
+                    <input type="text" class="field-input" id="diagram_url" value="${data.url || ''}" placeholder="/diagrams/files/scheme.pdf">
+                </div>
+                <div class="field-group" style="border:1px solid var(--border); border-radius:6px; padding:10px; background:var(--bg-input);">
+                    <label class="field-label" style="font-weight:500;">📤 Загрузить файл</label>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                        <input type="file" class="field-input" id="diagram_file" accept=".pdf,.png,.jpg,.jpeg,.svg,.dwg" style="flex:1; padding:4px;">
+                        <button class="btn btn-primary" id="diagram_upload">📤 Загрузить</button>
+                    </div>
+                    <div id="diagram_upload_status" style="margin-top:4px; font-size:12px; color:var(--text-muted);"></div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">📋 Предпросмотр</label>
+                    <div class="json-preview" id="diagram_preview">${JSON.stringify({ name: data.name || '', description: data.description || '', url: data.url || '' }, null, 2)}</div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button class="btn btn-success" id="diagram_save">💾 Сохранить</button>
+                    <button class="btn btn-outline" id="diagram_cancel">Отмена</button>
+                </div>
+                <div id="diagram_status" style="margin-top:6px; font-size:13px; color:var(--text-muted);"></div>
+            `;
+        }
+
+        // ============================================================
+        // EDITOR — ТЕСТЫ
+        // ============================================================
+
+        function renderTestEditor(data) {
+            const commands = data.test || [];
+            const sortedCommands = sortCommandsByTime(commands);
+            const cmdOptions = CMD_LIST.map(c =>
+                `<option value="${c.value}">${c.label}</option>`
+            ).join('');
+
+            const commandListHtml = sortedCommands.length === 0 ?
+                '<div class="list-empty">Нет команд. Добавьте первую команду.</div>' :
+                sortedCommands.map((cmd, i) => {
+                    const label = getCmdLabel(cmd[1]);
+                    const unit = getCmdUnit(cmd[1]);
+                    return `
+                        <div class="list-item" data-index="${i}">
+                            <span>${i+1}. ${cmd[0]}ms → ${label} → ${cmd[2]}${unit ? ' ' + unit : ''}</span>
+                            <div>
+                                <button class="btn-icon danger" data-action="remove_test_cmd" data-idx="${i}">✕</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            return `
+                <div class="field-group">
+                    <label class="field-label">Название теста</label>
+                    <input type="text" class="field-input" id="test_name" value="${data.name || ''}" placeholder="Тест_открытия_двери">
+                    <div class="field-error" id="test_name_error">Имя уже существует</div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Описание</label>
+                    <textarea class="field-textarea" id="test_description" rows="2" placeholder="Описание теста">${data.description || ''}</textarea>
+                </div>
+                <div class="field-group" style="border:1px solid var(--border); border-radius:6px; padding:10px; background:var(--bg-input);">
+                    <label class="field-label" style="font-weight:500;">➕ Добавить команду</label>
+                    <div class="add-row">
+                        <div class="field-group">
+                            <label class="field-label">Время (мс)</label>
+                            <input type="number" class="field-input" id="test_cmd_time" value="0" step="10">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Команда</label>
+                            <select class="field-input" id="test_cmd_select">${cmdOptions}</select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Значение</label>
+                            <div style="display:flex; gap:4px; align-items:center;">
+                                <input type="number" class="field-input" id="test_cmd_value" value="3" step="0.1" style="flex:1;">
+                                <span class="text-xs text-muted" id="test_cmd_unit">сек</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" id="test_add_cmd" style="align-self:center;">➕ Добавить</button>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">📋 Команды теста (<span id="test_cmd_count">${sortedCommands.length}</span>)</label>
+                    <div class="list-container" id="test_cmd_list" style="max-height:200px;">
+                        ${commandListHtml}
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">📋 Предпросмотр</label>
+                    <div class="json-preview" id="test_preview">${JSON.stringify({ name: data.name || '', description: data.description || '', test: sortedCommands }, null, 2)}</div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button class="btn btn-success" id="test_save">💾 Сохранить</button>
+                    <button class="btn btn-outline" id="test_cancel">Отмена</button>
+                </div>
+                <div id="test_status" style="margin-top:6px; font-size:13px; color:var(--text-muted);"></div>
+            `;
+        }
+
+        // ============================================================
+        // EDITOR — ПРОВЕРКИ
+        // ============================================================
+
+        function renderCheckEditor(data) {
+            const initial = data.initial || [];
+            const triggers = data.triggers || [];
+            const tests = data.tests || [];
+
+            const cmdOptions = CMD_LIST.map(c =>
+                `<option value="${c.value}">${c.label}</option>`
+            ).join('');
+
+            const triggerOptions = TRIGGER_LIST.map(t =>
+                `<option value="${t.value}">${t.label}</option>`
+            ).join('');
+
+            const testOptions = state.allTests.map(t =>
+                `<option value="${t.name}">${t.name}</option>`
+            ).join('');
+
+            return `
+                <div class="field-group">
+                    <label class="field-label">Название проверки</label>
+                    <input type="text" class="field-input" id="check_name" value="${data.name || ''}" placeholder="Проверка_двери">
+                    <div class="field-error" id="check_name_error">Имя уже существует</div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Описание</label>
+                    <textarea class="field-textarea" id="check_description" rows="2" placeholder="Описание проверки">${data.description || ''}</textarea>
+                </div>
+                <!-- Initial -->
+                <div class="field-group" style="border:1px solid var(--border); border-radius:6px; padding:10px; background:var(--bg-input);">
+                    <label class="field-label" style="font-weight:500;">📋 Исходное состояние (initial)</label>
+                    <div class="add-row">
+                        <div class="field-group">
+                            <label class="field-label">Команда</label>
+                            <select class="field-input" id="check_initial_select">${cmdOptions}</select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Значение</label>
+                            <div style="display:flex; gap:4px; align-items:center;">
+                                <input type="number" class="field-input" id="check_initial_value" value="0" step="0.1" style="flex:1;">
+                                <span class="text-xs text-muted" id="check_initial_unit">сек</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" id="check_add_initial">➕ Добавить</button>
+                    </div>
+                    <div class="list-container" id="check_initial_list">
+                        ${initial.length === 0 ? '<div class="list-empty">Нет команд</div>' :
+                            initial.map((cmd, i) => {
+                                const label = getCmdLabel(cmd[0]);
+                                const unit = getCmdUnit(cmd[0]);
+                                return `
+                                    <div class="list-item" data-index="${i}">
+                                        <span>${label} → ${cmd[1]}${unit ? ' ' + unit : ''}</span>
+                                        <div>
+                                            ${i > 0 ? `<button class="btn-icon" data-action="move_initial" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                                            ${i < initial.length - 1 ? `<button class="btn-icon" data-action="move_initial" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                                            <button class="btn-icon danger" data-action="remove_initial" data-idx="${i}">✕</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')
+                        }
+                    </div>
+                </div>
+                <!-- Triggers -->
+                <div class="field-group" style="border:1px solid var(--border); border-radius:6px; padding:10px; background:var(--bg-input);">
+                    <label class="field-label" style="font-weight:500;">🔔 Триггеры (triggers)</label>
+                    <div class="add-row">
+                        <div class="field-group">
+                            <label class="field-label">Триггер</label>
+                            <select class="field-input" id="check_trigger_select">${triggerOptions}</select>
+                        </div>
+                        <div class="field-group" id="check_trigger_value_container">
+                            <label class="field-label">Состояние</label>
+                            <select class="field-input" id="check_trigger_value_select"><option value="0">0</option></select>
+                        </div>
+                        <div class="field-group" id="check_trigger_va_container" style="display:none;">
+                            <label class="field-label">Min</label>
+                            <input type="number" class="field-input" id="check_trigger_va_min" value="-20" step="1">
+                        </div>
+                        <div class="field-group" id="check_trigger_va_max_container" style="display:none;">
+                            <label class="field-label">Max</label>
+                            <input type="number" class="field-input" id="check_trigger_va_max" value="100" step="1">
+                        </div>
+                        <div class="field-group" id="check_trigger_va_dev_container" style="display:none;">
+                            <label class="field-label">Dev</label>
+                            <input type="number" class="field-input" id="check_trigger_va_dev" value="10" step="1">
+                        </div>
+                        <button class="btn btn-success" id="check_add_trigger">➕ Добавить</button>
+                    </div>
+                    <div class="list-container" id="check_trigger_list">
+                        ${triggers.length === 0 ? '<div class="list-empty">Нет триггеров</div>' :
+                            triggers.map((trg, i) => {
+                                const label = getTriggerLabel(trg[0]);
+                                let valueStr = '';
+                                if (typeof trg[1] === 'object') {
+                                    valueStr = `min:${trg[1].min}, max:${trg[1].max}, dev:${trg[1].dev}`;
+                                } else {
+                                    const states = getTriggerStates(trg[0]);
+                                    valueStr = states?.[trg[1]] || trg[1];
+                                }
+                                return `
+                                    <div class="list-item" data-index="${i}">
+                                        <span>${label} → ${valueStr}</span>
+                                        <div>
+                                            ${i > 0 ? `<button class="btn-icon" data-action="move_trigger" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                                            ${i < triggers.length - 1 ? `<button class="btn-icon" data-action="move_trigger" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                                            <button class="btn-icon danger" data-action="remove_trigger" data-idx="${i}">✕</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')
+                        }
+                    </div>
+                </div>
+                <!-- Tests -->
+                <div class="field-group" style="border:1px solid var(--border); border-radius:6px; padding:10px; background:var(--bg-input);">
+                    <label class="field-label" style="font-weight:500;">🧪 Тесты в проверке</label>
+                    <div class="add-row">
+                        <div class="field-group">
+                            <label class="field-label">Добавить тест</label>
+                            <select class="field-input" id="check_test_select">
+                                <option value="">-- выберите тест --</option>
+                                ${testOptions}
+                            </select>
+                        </div>
+                        <button class="btn btn-success" id="check_add_test">➕ Добавить</button>
+                    </div>
+                    <div class="list-container" id="check_test_list">
+                        ${tests.length === 0 ? '<div class="list-empty">Нет тестов</div>' :
+                            tests.map((test, i) => `
+                                <div class="list-item" data-index="${i}">
+                                    <span>${test}</span>
+                                    <div>
+                                        ${i > 0 ? `<button class="btn-icon" data-action="move_check_test" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                                        ${i < tests.length - 1 ? `<button class="btn-icon" data-action="move_check_test" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                                        <button class="btn-icon danger" data-action="remove_check_test" data-idx="${i}">✕</button>
+                                    </div>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">📋 Предпросмотр</label>
+                    <div class="json-preview" id="check_preview">${JSON.stringify({ 
+                        name: data.name || '', 
+                        description: data.description || '', 
+                        initial, 
+                        triggers, 
+                        tests 
+                    }, null, 2)}</div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button class="btn btn-success" id="check_save">💾 Сохранить</button>
+                    <button class="btn btn-outline" id="check_cancel">Отмена</button>
+                </div>
+                <div id="check_status" style="margin-top:6px; font-size:13px; color:var(--text-muted);"></div>
+            `;
+        }
+
+        // ============================================================
+        // EDITOR — ГРУППЫ
+        // ============================================================
+
+        function renderGroupEditor(data) {
+            const checks = data.checks || [];
+            const stand = data.stand || '';
+
+            const standOptions = state.allStands.map(s =>
+                `<option value="${s.name}" ${s.name === stand ? 'selected' : ''}>${s.name}</option>`
+            ).join('');
+
+            const checkOptions = state.allChecks.map(c =>
+                `<option value="${c.name}">${c.name}</option>`
+            ).join('');
+
+            return `
+                <div class="field-group">
+                    <label class="field-label">Название группы</label>
+                    <input type="text" class="field-input" id="group_name" value="${data.name || ''}" placeholder="Группа_тестов_двери">
+                    <div class="field-error" id="group_name_error">Имя уже существует</div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Описание</label>
+                    <textarea class="field-textarea" id="group_description" rows="2" placeholder="Описание группы">${data.description || ''}</textarea>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Стенд</label>
+                    <select class="field-input" id="group_stand_select">
+                        <option value="">-- выберите стенд --</option>
+                        ${standOptions}
+                    </select>
+                </div>
+                <div class="field-group" style="border:1px solid var(--border); border-radius:6px; padding:10px; background:var(--bg-input);">
+                    <label class="field-label" style="font-weight:500;">✅ Проверки в группе</label>
+                    <div class="add-row">
+                        <div class="field-group">
+                            <label class="field-label">Добавить проверку</label>
+                            <select class="field-input" id="group_check_select">
+                                <option value="">-- выберите проверку --</option>
+                                ${checkOptions}
+                            </select>
+                        </div>
+                        <button class="btn btn-success" id="group_add_check">➕ Добавить</button>
+                    </div>
+                    <div class="list-container" id="group_check_list">
+                        ${checks.length === 0 ? '<div class="list-empty">Нет проверок</div>' :
+                            checks.map((check, i) => `
+                                <div class="list-item" data-index="${i}">
+                                    <span>${check}</span>
+                                    <div>
+                                        ${i > 0 ? `<button class="btn-icon" data-action="move_group_check" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                                        ${i < checks.length - 1 ? `<button class="btn-icon" data-action="move_group_check" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                                        <button class="btn-icon danger" data-action="remove_group_check" data-idx="${i}">✕</button>
+                                    </div>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">📋 Предпросмотр</label>
+                    <div class="json-preview" id="group_preview">${JSON.stringify({ 
+                        name: data.name || '', 
+                        description: data.description || '', 
+                        stand, 
+                        checks 
+                    }, null, 2)}</div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button class="btn btn-success" id="group_save">💾 Сохранить</button>
+                    <button class="btn btn-outline" id="group_cancel">Отмена</button>
+                </div>
+                <div id="group_status" style="margin-top:6px; font-size:13px; color:var(--text-muted);"></div>
+            `;
+        }
+
+        // ============================================================
+        // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        // ============================================================
+
+        function getCmdLabel(value) {
+            const found = CMD_LIST.find(c => c.value === value);
+            return found ? found.label : value;
+        }
+
+        function getCmdUnit(value) {
+            const found = CMD_LIST.find(c => c.value === value);
+            return found ? found.unit : '';
+        }
+
+        function getTriggerLabel(value) {
+            const found = TRIGGER_LIST.find(t => t.value === value);
+            return found ? found.label : value;
+        }
+
+        function getTriggerStates(value) {
+            const found = TRIGGER_LIST.find(t => t.value === value);
+            return found && found.states ? found.states : null;
+        }
+
+        function sortCommandsByTime(commands) {
+            return commands.slice().sort((a, b) => {
+                if (a[0] !== b[0]) return a[0] - b[0];
+                return a[1].localeCompare(b[1]);
+            });
+        }
+
+        // ============================================================
+        // ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ РЕДАКТОРОВ
+        // ============================================================
+
+        function initEditorHandlers(type, data) {
+            switch (type) {
+                case 'stands':
+                    initStandHandlers(data);
+                    break;
+                case 'diagrams':
+                    initDiagramHandlers(data);
+                    break;
+                case 'tests':
+                    initTestHandlers(data);
+                    break;
+                case 'checks':
+                    initCheckHandlers(data);
+                    break;
+                case 'groups':
+                    initGroupHandlers(data);
+                    break;
+            }
+        }
+
+        // ============================================================
+        // ОБРАБОТЧИКИ — СТЕНДЫ
+        // ============================================================
+
+        function initStandHandlers(data) {
+            let controllers = data?.controllers || [];
+
+            function renderControllerList() {
+                const container = document.getElementById('stand_controller_list');
+                if (!container) return;
+                if (controllers.length === 0) {
+                    container.innerHTML = '<div class="list-empty">Нет контроллеров</div>';
+                    return;
+                }
+                container.innerHTML = controllers.map((c, i) => `
+                    <div class="list-item" data-index="${i}">
+                        <span>${c}</span>
+                        <div>
+                            ${i > 0 ? `<button class="btn-icon" data-action="move_stand_ctrl" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                            ${i < controllers.length - 1 ? `<button class="btn-icon" data-action="move_stand_ctrl" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                            <button class="btn-icon danger" data-action="remove_stand_ctrl" data-idx="${i}">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.querySelectorAll('[data-action="remove_stand_ctrl"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        controllers.splice(idx, 1);
+                        renderControllerList();
+                        updateStandPreview();
+                    };
+                });
+                container.querySelectorAll('[data-action="move_stand_ctrl"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        const dir = this.dataset.dir;
+                        const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+                        if (newIdx >= 0 && newIdx < controllers.length) {
+                            const temp = controllers[idx];
+                            controllers[idx] = controllers[newIdx];
+                            controllers[newIdx] = temp;
+                            renderControllerList();
+                            updateStandPreview();
+                        }
+                    };
+                });
+                updateStandPreview();
+            }
+
+            function updateStandPreview() {
+                const preview = document.getElementById('stand_preview');
+                if (preview) {
+                    const data = {
+                        name: document.getElementById('stand_name')?.value || '',
+                        description: document.getElementById('stand_description')?.value || '',
+                        controllers: controllers,
+                        diagram: document.getElementById('stand_diagram_select')?.value || ''
+                    };
+                    preview.textContent = JSON.stringify(data, null, 2);
+                }
+            }
+
+            document.getElementById('stand_add_controller')?.addEventListener('click', function() {
+                const select = document.getElementById('stand_controller_select');
+                const ctrl = select?.value;
+                if (ctrl && !controllers.includes(ctrl)) {
+                    controllers.push(ctrl);
+                    renderControllerList();
+                    updateStandPreview();
+                }
+            });
+
+            document.getElementById('stand_name')?.addEventListener('input', updateStandPreview);
+            document.getElementById('stand_description')?.addEventListener('input', updateStandPreview);
+            document.getElementById('stand_diagram_select')?.addEventListener('change', updateStandPreview);
+
+            document.getElementById('stand_save')?.addEventListener('click', function() {
+                const name = document.getElementById('stand_name')?.value?.trim();
+                if (!name) {
+                    document.getElementById('stand_status').textContent = '❌ Введите название стенда';
+                    document.getElementById('stand_status').style.color = 'var(--danger)';
+                    return;
+                }
+                const data = {
+                    name: name,
+                    description: document.getElementById('stand_description')?.value?.trim() || '',
+                    controllers: controllers,
+                    diagram: document.getElementById('stand_diagram_select')?.value || ''
+                };
+                sendCommand('stands_save', { name: name, data: data });
+                document.getElementById('stand_status').textContent = `💾 Сохранение "${name}"...`;
+                document.getElementById('stand_status').style.color = 'var(--text-muted)';
+            });
+
+            document.getElementById('stand_cancel')?.addEventListener('click', function() {
+                state.constructorSelected = null;
+                sendCommand('stands_list');
+            });
+
+            renderControllerList();
+            updateStandPreview();
+        }
+
+        // ============================================================
+        // ОБРАБОТЧИКИ — СХЕМЫ
+        // ============================================================
+
+        function initDiagramHandlers(data) {
+            function updateDiagramPreview() {
+                const preview = document.getElementById('diagram_preview');
+                if (preview) {
+                    const data = {
+                        name: document.getElementById('diagram_name')?.value || '',
+                        description: document.getElementById('diagram_description')?.value || '',
+                        url: document.getElementById('diagram_url')?.value || ''
+                    };
+                    preview.textContent = JSON.stringify(data, null, 2);
+                }
+            }
+
+            document.getElementById('diagram_upload')?.addEventListener('click', function() {
+                const fileInput = document.getElementById('diagram_file');
+                const file = fileInput?.files?.[0];
+                if (!file) {
+                    document.getElementById('diagram_upload_status').textContent = '❌ Выберите файл';
+                    document.getElementById('diagram_upload_status').style.color = 'var(--danger)';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                document.getElementById('diagram_upload_status').textContent = '⏳ Загрузка...';
+                document.getElementById('diagram_upload_status').style.color = 'var(--text-muted)';
+
+                fetch('/upload_diagram', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        document.getElementById('diagram_url').value = result.url;
+                        document.getElementById('diagram_upload_status').textContent = '✅ Файл загружен';
+                        document.getElementById('diagram_upload_status').style.color = 'var(--success)';
+                        updateDiagramPreview();
+                    } else {
+                        document.getElementById('diagram_upload_status').textContent = '❌ Ошибка загрузки';
+                        document.getElementById('diagram_upload_status').style.color = 'var(--danger)';
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('diagram_upload_status').textContent = '❌ Ошибка: ' + err.message;
+                    document.getElementById('diagram_upload_status').style.color = 'var(--danger)';
+                });
+            });
+
+            document.getElementById('diagram_name')?.addEventListener('input', updateDiagramPreview);
+            document.getElementById('diagram_description')?.addEventListener('input', updateDiagramPreview);
+            document.getElementById('diagram_url')?.addEventListener('input', updateDiagramPreview);
+
+            document.getElementById('diagram_save')?.addEventListener('click', function() {
+                const name = document.getElementById('diagram_name')?.value?.trim();
+                if (!name) {
+                    document.getElementById('diagram_status').textContent = '❌ Введите название схемы';
+                    document.getElementById('diagram_status').style.color = 'var(--danger)';
+                    return;
+                }
+                const data = {
+                    name: name,
+                    description: document.getElementById('diagram_description')?.value?.trim() || '',
+                    url: document.getElementById('diagram_url')?.value?.trim() || ''
+                };
+                sendCommand('diagrams_save', { name: name, data: data });
+                document.getElementById('diagram_status').textContent = `💾 Сохранение "${name}"...`;
+                document.getElementById('diagram_status').style.color = 'var(--text-muted)';
+            });
+
+            document.getElementById('diagram_cancel')?.addEventListener('click', function() {
+                state.constructorSelected = null;
+                sendCommand('diagrams_list');
+            });
+
+            updateDiagramPreview();
+        }
+
+        // ============================================================
+        // ОБРАБОТЧИКИ — ТЕСТЫ
+        // ============================================================
+
+        function initTestHandlers(data) {
+            let commands = data?.test || [];
+
+            function renderCommandList() {
+                const container = document.getElementById('test_cmd_list');
+                if (!container) return;
+                const sorted = sortCommandsByTime(commands);
+                if (sorted.length === 0) {
+                    container.innerHTML = '<div class="list-empty">Нет команд. Добавьте первую команду.</div>';
+                    document.getElementById('test_cmd_count').textContent = '0';
+                    return;
+                }
+                container.innerHTML = sorted.map((cmd, i) => {
+                    const label = getCmdLabel(cmd[1]);
+                    const unit = getCmdUnit(cmd[1]);
+                    return `
+                        <div class="list-item" data-index="${i}">
+                            <span>${i+1}. ${cmd[0]}ms → ${label} → ${cmd[2]}${unit ? ' ' + unit : ''}</span>
+                            <div>
+                                <button class="btn-icon danger" data-action="remove_test_cmd" data-idx="${i}">✕</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('test_cmd_count').textContent = sorted.length;
+
+                container.querySelectorAll('[data-action="remove_test_cmd"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        commands.splice(idx, 1);
+                        renderCommandList();
+                        updateTestPreview();
+                    };
+                });
+                updateTestPreview();
+            }
+
+            function updateTestPreview() {
+                const preview = document.getElementById('test_preview');
+                if (preview) {
+                    const data = {
+                        name: document.getElementById('test_name')?.value || '',
+                        description: document.getElementById('test_description')?.value || '',
+                        test: sortCommandsByTime(commands)
+                    };
+                    preview.textContent = JSON.stringify(data, null, 2);
+                }
+            }
+
+            document.getElementById('test_add_cmd')?.addEventListener('click', function() {
+                const time = parseInt(document.getElementById('test_cmd_time')?.value) || 0;
+                const cmd = document.getElementById('test_cmd_select')?.value || 'green';
+                const value = parseFloat(document.getElementById('test_cmd_value')?.value) || 0;
+                commands.push([time, cmd, value]);
+                renderCommandList();
+                updateTestPreview();
+                document.getElementById('test_cmd_time').value = '0';
+                document.getElementById('test_cmd_value').value = '3';
+            });
+
+            document.getElementById('test_cmd_select')?.addEventListener('change', function() {
+                const unit = document.getElementById('test_cmd_unit');
+                const found = CMD_LIST.find(c => c.value === this.value);
+                unit.textContent = found?.unit || '';
+            });
+
+            document.getElementById('test_name')?.addEventListener('input', updateTestPreview);
+            document.getElementById('test_description')?.addEventListener('input', updateTestPreview);
+
+            document.getElementById('test_save')?.addEventListener('click', function() {
+                const name = document.getElementById('test_name')?.value?.trim();
+                if (!name) {
+                    document.getElementById('test_status').textContent = '❌ Введите название теста';
+                    document.getElementById('test_status').style.color = 'var(--danger)';
+                    return;
+                }
+                if (commands.length === 0) {
+                    document.getElementById('test_status').textContent = '❌ Добавьте хотя бы одну команду';
+                    document.getElementById('test_status').style.color = 'var(--danger)';
+                    return;
+                }
+                const sorted = sortCommandsByTime(commands);
+                const data = {
+                    name: name,
+                    description: document.getElementById('test_description')?.value?.trim() || '',
+                    test: sorted
+                };
+                sendCommand('tests_save', { name: name, data: data });
+                document.getElementById('test_status').textContent = `💾 Сохранение "${name}"...`;
+                document.getElementById('test_status').style.color = 'var(--text-muted)';
+            });
+
+            document.getElementById('test_cancel')?.addEventListener('click', function() {
+                state.constructorSelected = null;
+                sendCommand('tests_list');
+            });
+
+            renderCommandList();
+            updateTestPreview();
+        }
+
+        // ============================================================
+        // ОБРАБОТЧИКИ — ПРОВЕРКИ
+        // ============================================================
+
+        function initCheckHandlers(data) {
+            let initial = data?.initial || [];
+            let triggers = data?.triggers || [];
+            let tests = data?.tests || [];
+
+            function renderInitialList() {
+                const container = document.getElementById('check_initial_list');
+                if (!container) return;
+                if (initial.length === 0) {
+                    container.innerHTML = '<div class="list-empty">Нет команд</div>';
+                    return;
+                }
+                container.innerHTML = initial.map((cmd, i) => {
+                    const label = getCmdLabel(cmd[0]);
+                    const unit = getCmdUnit(cmd[0]);
+                    return `
+                        <div class="list-item" data-index="${i}">
+                            <span>${label} → ${cmd[1]}${unit ? ' ' + unit : ''}</span>
+                            <div>
+                                ${i > 0 ? `<button class="btn-icon" data-action="move_initial" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                                ${i < initial.length - 1 ? `<button class="btn-icon" data-action="move_initial" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                                <button class="btn-icon danger" data-action="remove_initial" data-idx="${i}">✕</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.querySelectorAll('[data-action="remove_initial"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        initial.splice(idx, 1);
+                        renderInitialList();
+                        updateCheckPreview();
+                    };
+                });
+                container.querySelectorAll('[data-action="move_initial"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        const dir = this.dataset.dir;
+                        const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+                        if (newIdx >= 0 && newIdx < initial.length) {
+                            const temp = initial[idx];
+                            initial[idx] = initial[newIdx];
+                            initial[newIdx] = temp;
+                            renderInitialList();
+                            updateCheckPreview();
+                        }
+                    };
+                });
+                updateCheckPreview();
+            }
+
+            function renderTriggerList() {
+                const container = document.getElementById('check_trigger_list');
+                if (!container) return;
+                if (triggers.length === 0) {
+                    container.innerHTML = '<div class="list-empty">Нет триггеров</div>';
+                    return;
+                }
+                container.innerHTML = triggers.map((trg, i) => {
+                    const label = getTriggerLabel(trg[0]);
+                    let valueStr = '';
+                    if (typeof trg[1] === 'object') {
+                        valueStr = `min:${trg[1].min}, max:${trg[1].max}, dev:${trg[1].dev}`;
+                    } else {
+                        const states = getTriggerStates(trg[0]);
+                        valueStr = states?.[trg[1]] || trg[1];
+                    }
+                    return `
+                        <div class="list-item" data-index="${i}">
+                            <span>${label} → ${valueStr}</span>
+                            <div>
+                                ${i > 0 ? `<button class="btn-icon" data-action="move_trigger" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                                ${i < triggers.length - 1 ? `<button class="btn-icon" data-action="move_trigger" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                                <button class="btn-icon danger" data-action="remove_trigger" data-idx="${i}">✕</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.querySelectorAll('[data-action="remove_trigger"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        triggers.splice(idx, 1);
+                        renderTriggerList();
+                        updateCheckPreview();
+                    };
+                });
+                container.querySelectorAll('[data-action="move_trigger"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        const dir = this.dataset.dir;
+                        const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+                        if (newIdx >= 0 && newIdx < triggers.length) {
+                            const temp = triggers[idx];
+                            triggers[idx] = triggers[newIdx];
+                            triggers[newIdx] = temp;
+                            renderTriggerList();
+                            updateCheckPreview();
+                        }
+                    };
+                });
+                updateCheckPreview();
+            }
+
+            function renderTestList() {
+                const container = document.getElementById('check_test_list');
+                if (!container) return;
+                if (tests.length === 0) {
+                    container.innerHTML = '<div class="list-empty">Нет тестов</div>';
+                    return;
+                }
+                container.innerHTML = tests.map((test, i) => `
+                    <div class="list-item" data-index="${i}">
+                        <span>${test}</span>
+                        <div>
+                            ${i > 0 ? `<button class="btn-icon" data-action="move_check_test" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                            ${i < tests.length - 1 ? `<button class="btn-icon" data-action="move_check_test" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                            <button class="btn-icon danger" data-action="remove_check_test" data-idx="${i}">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.querySelectorAll('[data-action="remove_check_test"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        tests.splice(idx, 1);
+                        renderTestList();
+                        updateCheckPreview();
+                    };
+                });
+                container.querySelectorAll('[data-action="move_check_test"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        const dir = this.dataset.dir;
+                        const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+                        if (newIdx >= 0 && newIdx < tests.length) {
+                            const temp = tests[idx];
+                            tests[idx] = tests[newIdx];
+                            tests[newIdx] = temp;
+                            renderTestList();
+                            updateCheckPreview();
+                        }
+                    };
+                });
+                updateCheckPreview();
+            }
+
+            function updateCheckPreview() {
+                const preview = document.getElementById('check_preview');
+                if (preview) {
+                    const data = {
+                        name: document.getElementById('check_name')?.value || '',
+                        description: document.getElementById('check_description')?.value || '',
+                        initial: initial,
+                        triggers: triggers,
+                        tests: tests
+                    };
+                    preview.textContent = JSON.stringify(data, null, 2);
+                }
+            }
+
+            document.getElementById('check_trigger_select')?.addEventListener('change', function() {
+                const val = this.value;
+                const trigger = TRIGGER_LIST.find(t => t.value === val);
+                const vaContainer = document.getElementById('check_trigger_va_container');
+                const vaMaxContainer = document.getElementById('check_trigger_va_max_container');
+                const vaDevContainer = document.getElementById('check_trigger_va_dev_container');
+                const valueSelect = document.getElementById('check_trigger_value_select');
+                const valueContainer = document.getElementById('check_trigger_value_container');
+
+                if (trigger && trigger.isVA) {
+                    if (vaContainer) vaContainer.style.display = 'block';
+                    if (vaMaxContainer) vaMaxContainer.style.display = 'block';
+                    if (vaDevContainer) vaDevContainer.style.display = 'block';
+                    if (valueContainer) valueContainer.style.display = 'none';
+                } else {
+                    if (vaContainer) vaContainer.style.display = 'none';
+                    if (vaMaxContainer) vaMaxContainer.style.display = 'none';
+                    if (vaDevContainer) vaDevContainer.style.display = 'none';
+                    if (valueContainer) valueContainer.style.display = 'block';
+
+                    if (valueSelect && trigger?.states) {
+                        valueSelect.innerHTML = Object.entries(trigger.states).map(([key, label]) =>
+                            `<option value="${key}">${label}</option>`
+                        ).join('');
+                    }
+                }
+            });
+
+            document.getElementById('check_add_initial')?.addEventListener('click', function() {
+                const cmd = document.getElementById('check_initial_select')?.value || 'green';
+                const value = parseFloat(document.getElementById('check_initial_value')?.value) || 0;
+                initial.push([cmd, value]);
+                renderInitialList();
+                updateCheckPreview();
+            });
+
+            document.getElementById('check_add_trigger')?.addEventListener('click', function() {
+                const cmd = document.getElementById('check_trigger_select')?.value || 'door';
+                const trigger = TRIGGER_LIST.find(t => t.value === cmd);
+                let value;
+                if (trigger && trigger.isVA) {
+                    const min = parseInt(document.getElementById('check_trigger_va_min')?.value) || -20;
+                    const max = parseInt(document.getElementById('check_trigger_va_max')?.value) || 100;
+                    const dev = parseInt(document.getElementById('check_trigger_va_dev')?.value) || 10;
+                    value = { min, max, dev };
+                } else {
+                    value = parseInt(document.getElementById('check_trigger_value_select')?.value) || 0;
+                }
+                triggers.push([cmd, value]);
+                renderTriggerList();
+                updateCheckPreview();
+            });
+
+            document.getElementById('check_add_test')?.addEventListener('click', function() {
+                const test = document.getElementById('check_test_select')?.value;
+                if (test && !tests.includes(test)) {
+                    tests.push(test);
+                    renderTestList();
+                    updateCheckPreview();
+                }
+            });
+
+            document.getElementById('check_name')?.addEventListener('input', updateCheckPreview);
+            document.getElementById('check_description')?.addEventListener('input', updateCheckPreview);
+            document.getElementById('check_initial_select')?.addEventListener('change', function() {
+                const found = CMD_LIST.find(c => c.value === this.value);
+                const unit = document.getElementById('check_initial_unit');
+                unit.textContent = found?.unit || '';
+            });
+            document.getElementById('check_initial_value')?.addEventListener('input', updateCheckPreview);
+
+            document.getElementById('check_save')?.addEventListener('click', function() {
+                const name = document.getElementById('check_name')?.value?.trim();
+                if (!name) {
+                    document.getElementById('check_status').textContent = '❌ Введите название проверки';
+                    document.getElementById('check_status').style.color = 'var(--danger)';
+                    return;
+                }
+                const data = {
+                    name: name,
+                    description: document.getElementById('check_description')?.value?.trim() || '',
+                    initial: initial,
+                    triggers: triggers,
+                    tests: tests
+                };
+                sendCommand('checks_save', { name: name, data: data });
+                document.getElementById('check_status').textContent = `💾 Сохранение "${name}"...`;
+                document.getElementById('check_status').style.color = 'var(--text-muted)';
+            });
+
+            document.getElementById('check_cancel')?.addEventListener('click', function() {
+                state.constructorSelected = null;
+                sendCommand('checks_list');
+            });
+
+            renderInitialList();
+            renderTriggerList();
+            renderTestList();
+            updateCheckPreview();
+
+            const triggerSelect = document.getElementById('check_trigger_select');
+            if (triggerSelect) triggerSelect.dispatchEvent(new Event('change'));
+        }
+
+        // ============================================================
+        // ОБРАБОТЧИКИ — ГРУППЫ
+        // ============================================================
+
+        function initGroupHandlers(data) {
+            let checks = data?.checks || [];
+
+            function renderCheckList() {
+                const container = document.getElementById('group_check_list');
+                if (!container) return;
+                if (checks.length === 0) {
+                    container.innerHTML = '<div class="list-empty">Нет проверок</div>';
+                    return;
+                }
+                container.innerHTML = checks.map((check, i) => `
+                    <div class="list-item" data-index="${i}">
+                        <span>${check}</span>
+                        <div>
+                            ${i > 0 ? `<button class="btn-icon" data-action="move_group_check" data-dir="up" data-idx="${i}">▲</button>` : ''}
+                            ${i < checks.length - 1 ? `<button class="btn-icon" data-action="move_group_check" data-dir="down" data-idx="${i}">▼</button>` : ''}
+                            <button class="btn-icon danger" data-action="remove_group_check" data-idx="${i}">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.querySelectorAll('[data-action="remove_group_check"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        checks.splice(idx, 1);
+                        renderCheckList();
+                        updateGroupPreview();
+                    };
+                });
+                container.querySelectorAll('[data-action="move_group_check"]').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.dataset.idx);
+                        const dir = this.dataset.dir;
+                        const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+                        if (newIdx >= 0 && newIdx < checks.length) {
+                            const temp = checks[idx];
+                            checks[idx] = checks[newIdx];
+                            checks[newIdx] = temp;
+                            renderCheckList();
+                            updateGroupPreview();
+                        }
+                    };
+                });
+                updateGroupPreview();
+            }
+
+            function updateGroupPreview() {
+                const preview = document.getElementById('group_preview');
+                if (preview) {
+                    const data = {
+                        name: document.getElementById('group_name')?.value || '',
+                        description: document.getElementById('group_description')?.value || '',
+                        stand: document.getElementById('group_stand_select')?.value || '',
+                        checks: checks
+                    };
+                    preview.textContent = JSON.stringify(data, null, 2);
+                }
+            }
+
+            document.getElementById('group_add_check')?.addEventListener('click', function() {
+                const check = document.getElementById('group_check_select')?.value;
+                if (check && !checks.includes(check)) {
+                    checks.push(check);
+                    renderCheckList();
+                    updateGroupPreview();
+                }
+            });
+
+            document.getElementById('group_name')?.addEventListener('input', updateGroupPreview);
+            document.getElementById('group_description')?.addEventListener('input', updateGroupPreview);
+            document.getElementById('group_stand_select')?.addEventListener('change', updateGroupPreview);
+
+            document.getElementById('group_save')?.addEventListener('click', function() {
+                const name = document.getElementById('group_name')?.value?.trim();
+                if (!name) {
+                    document.getElementById('group_status').textContent = '❌ Введите название группы';
+                    document.getElementById('group_status').style.color = 'var(--danger)';
+                    return;
+                }
+                const data = {
+                    name: name,
+                    description: document.getElementById('group_description')?.value?.trim() || '',
+                    stand: document.getElementById('group_stand_select')?.value || '',
+                    checks: checks
+                };
+                sendCommand('groups_save', { name: name, data: data });
+                document.getElementById('group_status').textContent = `💾 Сохранение "${name}"...`;
+                document.getElementById('group_status').style.color = 'var(--text-muted)';
+            });
+
+            document.getElementById('group_cancel')?.addEventListener('click', function() {
+                state.constructorSelected = null;
+                sendCommand('groups_list');
+            });
+
+            renderCheckList();
+            updateGroupPreview();
+        }
+
+        // ============================================================
+        // CONSTRUCTOR — ВКЛАДКИ И ДЕЙСТВИЯ
+        // ============================================================
+
+        function initConstructor() {
+            dom.typeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    dom.typeBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    state.constructorType = this.dataset.type;
+                    state.constructorSelected = null;
+                    state.constructorData = null;
+
+                    renderEditor(state.constructorType, null);
+                    sendCommand(`${state.constructorType}_list`);
+                });
+            });
+
+            dom.constructorNew.addEventListener('click', function() {
+                state.constructorSelected = null;
+                state.constructorData = null;
+                renderEditor(state.constructorType, null);
+            });
+
+            dom.constructorDelete.addEventListener('click', async function() {
+                if (!state.constructorSelected) {
+                    showToast('❌ Выберите объект для удаления', 'warning');
+                    return;
+                }
+                const confirmed = await showModal('Удаление объекта',
+                    `Вы уверены, что хотите удалить "${state.constructorSelected}"?`, 'Удалить');
+                if (confirmed) {
+                    sendCommand(`${state.constructorType}_delete`, { name: state.constructorSelected });
+                    state.constructorSelected = null;
+                }
+            });
+        }
+
+        // ============================================================
+        // QUICK ACTIONS
+        // ============================================================
+
+        dom.quickRefresh.addEventListener('click', function() {
+            sendCommand('controllers_list');
+            sendCommand('converters_list');
+            sendCommand('available_controllers');
+            showToast('🔄 Обновление списка...', 'info');
+        });
+
+        dom.quickScan.addEventListener('click', function() {
+            sendCommand('controllers_list');
+            sendCommand('converters_list');
+            sendCommand('available_controllers');
+            showToast('🔍 Поиск контроллеров...', 'info');
+            setTimeout(() => {
+                sendCommand('controllers_list');
+                sendCommand('converters_list');
+                sendCommand('available_controllers');
+            }, 1000);
+        });
+
+        document.querySelectorAll('.quick-cmd').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const cmd = this.dataset.cmd;
+                const controller = dom.quickController.value;
+                if (!controller) { showToast('❌ Выберите контроллер', 'error'); return; }
+                const val = prompt('Интервал (сек):', '3');
+                if (val === null) return;
+                const num = parseFloat(val) || 0;
+                sendCommand(cmd, { controller, interval: num });
+                showToast(`⚡ ${cmd} → ${controller} (${num}с)`, 'success');
+            });
+        });
+
+        // ============================================================
+        // NAVIGATION
+        // ============================================================
+
+        dom.navBar.addEventListener('click', function(e) {
+            const tab = e.target.closest('.nav-tab');
+            if (!tab) return;
+            const page = tab.dataset.page;
+            if (!page) return;
+
+            dom.navBar.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            for (const key in dom.pages) {
+                dom.pages[key].classList.toggle('active', key === page);
+            }
+
+            state.currentPage = page;
+
+            switch (page) {
+                case 'controllers':
+                    sendCommand('controllers_list');
+                    sendCommand('converters_list');
+                    break;
+                case 'constructor':
+                    sendCommand(`${state.constructorType}_list`);
+                    break;
+                case 'dashboard':
+                    sendCommand('controllers_list');
+                    sendCommand('converters_list');
+                    sendCommand('stands_list');
+                    sendCommand('diagrams_list');
+                    sendCommand('tests_list');
+                    sendCommand('checks_list');
+                    sendCommand('groups_list');
+                    break;
+            }
+        });
+
+        // ============================================================
+        // CONNECTION
+        // ============================================================
+
+        dom.connectBtn.addEventListener('click', connectWS);
+        dom.disconnectBtn.addEventListener('click', disconnectWS);
+
+        // ============================================================
+        // INIT
+        // ============================================================
+
+        function init() {
+            showToast('🚀 Интерфейс загружен v3.0', 'info');
+
+            initConstructor();
+
+            setTimeout(() => {
+                if (!state.connected) connectWS();
+            }, 500);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        // ============================================================
+        // EXPORTS
+        // ============================================================
+
+        window.state = state;
+        window.CMD_LIST = CMD_LIST;
+        window.TRIGGER_LIST = TRIGGER_LIST;
+        window.sendCommand = sendCommand;
+        window.showToast = showToast;
+        window.showModal = showModal;
+        window.addLog = addLog;
+        window.renderConstructorList = renderConstructorList;
+        window.renderControllers = renderControllers;
+        window.renderConverters = renderConverters;
+        window.updateQuickController = updateQuickController;
+        window.updateStats = updateStats;
+        window.dom = dom;
+        window.renderEditor = renderEditor;
+        window.updateAvailableControllers = updateAvailableControllers;
+        window.initConstructor = initConstructor;
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "skud-testing",
+  "version": "3.0.2",
+  "description": "СКУД Тестирование v3.0.2 — сервер управления контроллерами",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.9",
+    "ws": "^7.5.12"
+  },
+  "author": "Murat",
+  "license": "ISC"
+}

@@ -1,0 +1,2519 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>СКУД Исполнение v3.3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0e1a;
+            color: #e8edf5;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0e1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3a5c;
+            border-radius: 3px;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #141b2d;
+            border-bottom: 1px solid #2a3a5c;
+            padding: 10px 24px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .app-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4a7aff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .app-header .logo-icon {
+            font-size: 24px;
+            -webkit-text-fill-color: initial;
+        }
+
+        .app-header .version {
+            font-size: 11px;
+            color: #556688;
+            font-weight: 400;
+            -webkit-text-fill-color: #556688;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #8899bb;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .status-dot.connected {
+            background: #22c55e;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+        }
+
+        .status-dot.disconnected {
+            background: #ef4444;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .status-dot.testing {
+            background: #f59e0b;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+            animation: pulse-dot 1s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+
+        .api-key-input {
+            background: #0f1629;
+            border: 1px solid #2a3a5c;
+            border-radius: 6px;
+            padding: 5px 12px;
+            color: #e8edf5;
+            font-size: 13px;
+            width: 120px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .api-key-input:focus {
+            border-color: #4a7aff;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.25s;
+            white-space: nowrap;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: #4a7aff;
+            color: #fff;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #3a5fd9;
+            box-shadow: 0 0 20px rgba(74, 122, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #22c55e;
+            color: #fff;
+        }
+        .btn-success:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+        .btn-danger:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: #0a0e1a;
+        }
+        .btn-warning:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-info {
+            background: #06b6d4;
+            color: #fff;
+        }
+        .btn-info:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-purple {
+            background: #8b5cf6;
+            color: #fff;
+        }
+        .btn-purple:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #2a3a5c;
+            color: #8899bb;
+        }
+        .btn-outline:hover:not(:disabled) {
+            border-color: #8899bb;
+            color: #e8edf5;
+            background: #1e2a45;
+        }
+
+        .btn-sm {
+            padding: 3px 10px;
+            font-size: 12px;
+        }
+
+        .nav-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            background: #141b2d;
+            border-bottom: 1px solid #2a3a5c;
+            padding: 6px 24px;
+            flex-shrink: 0;
+        }
+
+        .nav-tab {
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #8899bb;
+            transition: all 0.25s;
+            background: transparent;
+            border: none;
+        }
+
+        .nav-tab:hover {
+            color: #e8edf5;
+            background: #1e2a45;
+        }
+
+        .nav-tab.active {
+            background: #4a7aff;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(74, 122, 255, 0.3);
+        }
+
+        .app-main {
+            flex: 1;
+            overflow: hidden;
+            padding: 12px 24px 20px 24px;
+        }
+
+        .page {
+            display: none;
+            height: 100%;
+            overflow: auto;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            height: 100%;
+            min-height: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .page-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+            background: #141b2d;
+            border-radius: 12px;
+            border: 1px solid #2a3a5c;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid #2a3a5c;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .card-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .card-header .badge {
+            font-size: 11px;
+            background: #0a0e1a;
+            padding: 2px 10px;
+            border-radius: 12px;
+            color: #8899bb;
+            border: 1px solid #2a3a5c;
+        }
+
+        .card-body {
+            padding: 12px 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .card-body.no-padding {
+            padding: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: #0f1629;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-item .stat-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #4a7aff;
+        }
+
+        .stat-item .stat-value.controllers {
+            color: #4a7aff;
+        }
+        .stat-item .stat-value.converters {
+            color: #22c55e;
+        }
+        .stat-item .stat-value.groups {
+            color: #8b5cf6;
+        }
+        .stat-item .stat-value.checks {
+            color: #f59e0b;
+        }
+        .stat-item .stat-value.tests {
+            color: #06b6d4;
+        }
+        .stat-item .stat-value.results {
+            color: #f59e0b;
+        }
+
+        .stat-item .stat-label {
+            font-size: 12px;
+            color: #8899bb;
+        }
+
+        .dashboard-log-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #2a3a5c;
+        }
+
+        .dashboard-log-label {
+            font-size: 13px;
+            color: #8899bb;
+        }
+
+        .dashboard-log {
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 12px;
+            color: #8899bb;
+            margin-top: 4px;
+        }
+
+        .dashboard-log .log-entry {
+            display: flex;
+            gap: 6px;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(42, 58, 92, 0.15);
+        }
+
+        .dashboard-log .log-entry .time {
+            color: #556688;
+        }
+
+        .dashboard-log .log-entry .icon {
+            width: 18px;
+            text-align: center;
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+        }
+
+        .quick-actions-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .field-group {
+            margin-bottom: 10px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 12px;
+            color: #8899bb;
+            margin-bottom: 2px;
+        }
+
+        .field-input {
+            background: #0f1629;
+            border: 1px solid #2a3a5c;
+            border-radius: 4px;
+            padding: 5px 10px;
+            color: #e8edf5;
+            font-size: 13px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .field-input:focus {
+            border-color: #4a7aff;
+        }
+
+        .ctrl-item {
+            background: #0f1629;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border-left: 3px solid #4a7aff;
+        }
+
+        .ctrl-item .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .ctrl-item .name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .ctrl-item .details {
+            font-size: 12px;
+            color: #8899bb;
+        }
+
+        .ctrl-item .status-badge {
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: #22c55e;
+            color: #0a0e1a;
+        }
+
+        .ctrl-item .status-badge.inactive {
+            background: #2a3a5c;
+            color: #8899bb;
+        }
+
+        .runner-selects {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 640px) {
+            .runner-selects {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .runner-modes {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .runner-modes .mode-option {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #8899bb;
+            cursor: pointer;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .test-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #8899bb;
+            margin-bottom: 10px;
+        }
+
+        .test-progress .bar {
+            flex: 1;
+            height: 6px;
+            background: #2a3a5c;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .test-progress .bar .fill {
+            height: 100%;
+            background: #4a7aff;
+            border-radius: 3px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .runner-info {
+            font-size: 13px;
+            color: #8899bb;
+        }
+
+        .runner-info>div {
+            margin-bottom: 2px;
+        }
+
+        .runner-info .compare-result {
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-top: 4px;
+            font-size: 13px;
+        }
+
+        .runner-info .compare-result.success {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid #22c55e;
+            color: #22c55e;
+        }
+
+        .runner-info .compare-result.error {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .runner-info .compare-result .error-item {
+            font-size: 12px;
+            padding: 2px 8px;
+            margin: 2px 0;
+            background: rgba(239, 68, 68, 0.08);
+            border-radius: 4px;
+            border-left: 2px solid #ef4444;
+        }
+
+        .test-result-container {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #0f1629;
+            border-radius: 6px;
+            padding: 6px 10px;
+            border: 1px solid #2a3a5c;
+        }
+
+        .test-result-container .event {
+            display: flex;
+            gap: 10px;
+            padding: 1px 0;
+            border-bottom: 1px solid rgba(42, 58, 92, 0.15);
+        }
+
+        .test-result-container .event .idx {
+            color: #556688;
+            min-width: 28px;
+        }
+
+        .test-result-container .event .cmd {
+            color: #4a7aff;
+            min-width: 80px;
+        }
+
+        .test-result-container .event .val {
+            color: #22c55e;
+        }
+
+        .test-result-container .event .time {
+            color: #556688;
+            margin-left: auto;
+        }
+
+        .test-result-container .empty-result {
+            color: #556688;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .results-actions {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .compare-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .compare-controls .tolerance-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #8899bb;
+        }
+
+        .compare-controls .tolerance-label input {
+            width: 80px;
+            background: #0f1629;
+            border: 1px solid #2a3a5c;
+            border-radius: 4px;
+            padding: 2px 8px;
+            color: #e8edf5;
+        }
+
+        .compare-result-container {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 13px;
+        }
+
+        .compare-result-box {
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 4px 0;
+        }
+
+        .compare-result-box.success {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid #22c55e;
+            color: #22c55e;
+        }
+
+        .compare-result-box.error {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .compare-error-item {
+            padding: 3px 8px;
+            font-size: 12px;
+            background: rgba(239, 68, 68, 0.08);
+            border-radius: 4px;
+            margin: 2px 0;
+            border-left: 2px solid #ef4444;
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 380px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 8px;
+            background: #141b2d;
+            border: 1px solid #2a3a5c;
+            color: #e8edf5;
+            font-size: 13px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            animation: toastIn 0.3s ease;
+        }
+
+        .toast.success {
+            border-color: #22c55e;
+        }
+        .toast.error {
+            border-color: #ef4444;
+        }
+        .toast.warning {
+            border-color: #f59e0b;
+        }
+        .toast.info {
+            border-color: #06b6d4;
+        }
+
+        .toast .toast-icon {
+            font-size: 18px;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.out {
+            animation: toastOut 0.3s ease forwards;
+        }
+
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #141b2d;
+            border-radius: 12px;
+            border: 1px solid #2a3a5c;
+            padding: 24px 28px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            animation: modalIn 0.25s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .app-header {
+                padding: 8px 12px;
+            }
+            .app-header .logo {
+                font-size: 15px;
+            }
+            .app-main {
+                padding: 8px 12px 12px 12px;
+            }
+            .nav-bar {
+                padding: 4px 12px;
+            }
+            .nav-tab {
+                padding: 4px 10px;
+                font-size: 12px;
+            }
+            .api-key-input {
+                width: 80px;
+                font-size: 12px;
+            }
+            .btn {
+                font-size: 12px;
+                padding: 4px 10px;
+            }
+            .page-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-box {
+                padding: 16px 18px;
+                width: 95%;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .quick-actions-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .runner-selects {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOAST -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <h3 id="modalTitle">⚠️ Подтверждение</h3>
+            <p id="modalMessage">Вы уверены?</p>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="modalCancel">Отмена</button>
+                <button class="btn btn-danger" id="modalConfirm">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <div class="app-container">
+
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">▶️</span>
+                СКУД Исполнение
+                <span class="version">v3.3</span>
+            </div>
+            <div class="header-right">
+                <div class="status-indicator">
+                    <span class="status-dot disconnected" id="wsStatusDot"></span>
+                    <span id="wsStatusText">Отключено</span>
+                </div>
+                <input type="password" class="api-key-input" id="apiKey" value="1356_api" placeholder="API ключ">
+                <button class="btn btn-primary" id="connectBtn">🔗 Подключить</button>
+                <button class="btn btn-danger" id="disconnectBtn" disabled>❌ Отключить</button>
+                <a href="index.html" class="btn btn-outline">🔧 Администрирование</a>
+            </div>
+        </header>
+
+        <!-- NAVIGATION -->
+        <nav class="nav-bar" id="navBar">
+            <button class="nav-tab active" data-page="dashboard">📊 Панель</button>
+            <button class="nav-tab" data-page="runner">▶️ Исполнение</button>
+            <button class="nav-tab" data-page="results">📈 Результаты</button>
+            <button class="nav-tab" data-page="controllers">🎯 Контроллеры</button>
+        </nav>
+
+        <!-- MAIN -->
+        <main class="app-main">
+
+            <!-- DASHBOARD -->
+            <div class="page active" id="page-dashboard">
+                <div class="page-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📊 Статистика</h3>
+                            <span class="badge" id="statsTime">--</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-value controllers" id="statControllers">0</div>
+                                    <div class="stat-label">Контроллеров</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value converters" id="statConverters">0</div>
+                                    <div class="stat-label">Конвертеров</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value groups" id="statGroups">0</div>
+                                    <div class="stat-label">Групп</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value checks" id="statChecks">0</div>
+                                    <div class="stat-label">Проверок</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value tests" id="statTests">0</div>
+                                    <div class="stat-label">Тестов</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value results" id="statResults">0</div>
+                                    <div class="stat-label">Результатов</div>
+                                </div>
+                            </div>
+                            <div class="dashboard-log-section">
+                                <div class="dashboard-log-label">📌 Последние события</div>
+                                <div id="dashboardLog" class="dashboard-log"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>⚡ Быстрые действия</h3>
+                            <span class="badge">Выберите контроллер</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="field-group">
+                                <label class="field-label">Контроллер</label>
+                                <select class="field-input" id="quickController">
+                                    <option value="">-- выберите --</option>
+                                </select>
+                            </div>
+                            <div class="quick-actions-grid">
+                                <button class="btn btn-success quick-cmd" data-cmd="green">🟢 Зеленый</button>
+                                <button class="btn btn-danger quick-cmd" data-cmd="red">🔴 Красный</button>
+                                <button class="btn btn-warning quick-cmd" data-cmd="sound">🔊 Звук</button>
+                                <button class="btn btn-primary quick-cmd" data-cmd="lock">🔒 Замок</button>
+                                <button class="btn btn-outline quick-cmd" data-cmd="d0">🔘 D0</button>
+                                <button class="btn btn-outline quick-cmd" data-cmd="d1">🔘 D1</button>
+                            </div>
+                            <div class="quick-actions-row">
+                                <button class="btn btn-primary btn-sm" id="quickRefresh">🔄 Обновить</button>
+                                <button class="btn btn-warning btn-sm" id="quickScan">🔍 Поиск</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RUNNER -->
+            <div class="page" id="page-runner">
+                <div class="page-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>▶️ Управление тестом</h3>
+                            <span class="badge" id="runnerStatus">Остановлен</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="runner-selects">
+                                <div>
+                                    <label class="field-label">Группа</label>
+                                    <select class="field-input" id="runnerGroup">
+                                        <option value="">-- выберите --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="field-label">Проверка</label>
+                                    <select class="field-input" id="runnerCheck">
+                                        <option value="">-- выберите --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="field-label">Тест</label>
+                                    <select class="field-input" id="runnerTest">
+                                        <option value="">-- выберите --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="runner-modes">
+                                <label class="mode-option">
+                                    <input type="radio" name="runnerMode" value="auto" checked> Авто
+                                </label>
+                                <label class="mode-option">
+                                    <input type="radio" name="runnerMode" value="pause_check"> Пауза после проверки
+                                </label>
+                                <label class="mode-option">
+                                    <input type="radio" name="runnerMode" value="pause_test"> Пауза после теста
+                                </label>
+                                <label class="mode-option">
+                                    <input type="radio" name="runnerMode" value="step"> Пошагово
+                                </label>
+                            </div>
+
+                            <div class="test-controls">
+                                <button class="btn btn-success" id="runnerStart">▶️ Старт</button>
+                                <button class="btn btn-warning" id="runnerPause">⏸️ Пауза</button>
+                                <button class="btn btn-primary" id="runnerResume">▶️ Продолжить</button>
+                                <button class="btn btn-info" id="runnerStep">⏭️ Шаг</button>
+                                <button class="btn btn-danger" id="runnerStop">⏹️ Стоп</button>
+                                <button class="btn btn-purple" id="runnerSaveStandard">💾 Сохранить как эталон</button>
+                                <button class="btn btn-info" id="runnerCompare">🔍 Сравнить с эталоном</button>
+                            </div>
+
+                            <div class="test-progress">
+                                <span id="runnerProgressText">0 / 0</span>
+                                <div class="bar"><div class="fill" id="runnerProgressFill"></div></div>
+                                <span id="runnerPercent">0%</span>
+                            </div>
+
+                            <div class="runner-info">
+                                <div>📌 <span id="runnerInfo">Тест не выбран</span></div>
+                                <div>🎯 Контроллер: <span id="runnerController">—</span></div>
+                                <div id="runnerCompareResult" style="display:none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📝 Результат теста</h3>
+                            <span class="badge" id="runnerResultCount">0 событий</span>
+                        </div>
+                        <div class="card-body no-padding">
+                            <div class="test-result-container" id="runnerResult">
+                                <div class="empty-result">Ожидание запуска...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RESULTS -->
+            <div class="page" id="page-results">
+                <div class="page-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📈 Сохраненные результаты</h3>
+                            <span class="badge" id="resultsCount">0</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="results-actions">
+                                <button class="btn btn-sm btn-primary" id="resultsRefresh">🔄 Обновить</button>
+                                <button class="btn btn-sm btn-danger" id="resultsDelete">🗑️ Удалить</button>
+                            </div>
+                            <div id="resultsList" class="obj-list">
+                                <div class="empty-state">
+                                    <div class="icon">📭</div>
+                                    <p>Нет сохраненных результатов</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🔍 Сравнение</h3>
+                            <span class="badge">допуск <span id="toleranceDisplay">100</span> мс</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="field-group">
+                                <label class="field-label">Эталон</label>
+                                <select class="field-input" id="compareResult1"><option value="">— выберите —</option></select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Проверяемый</label>
+                                <select class="field-input" id="compareResult2"><option value="">— выберите —</option></select>
+                            </div>
+                            <div class="compare-controls">
+                                <label class="tolerance-label">
+                                    Допуск (мс):
+                                    <input type="number" id="compareTolerance" value="100" min="0" max="10000">
+                                </label>
+                                <button class="btn btn-primary" id="compareBtn">🔍 Сравнить</button>
+                            </div>
+                            <div id="compareResult" class="compare-result-container">
+                                <div class="empty-state">Выберите два результата</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTROLLERS -->
+            <div class="page" id="page-controllers">
+                <div class="page-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🎯 Контроллеры</h3>
+                            <span class="badge" id="ctrlCount">0</span>
+                        </div>
+                        <div class="card-body" id="controllersList">
+                            <div class="empty-state"><div class="icon">🔍</div><p>Поиск контроллеров...</p></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🔌 Конвертеры</h3>
+                            <span class="badge" id="convCount">0</span>
+                        </div>
+                        <div class="card-body" id="convertersList">
+                            <div class="empty-state"><div class="icon">🔌</div><p>Нет подключенных конвертеров</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ============================================================
+    JAVASCRIPT
+    ============================================================ -->
+    <script>
+        // ============================================================
+        // КОНСТАНТЫ
+        // ============================================================
+
+        const CMD_LIST = [
+            { value: 'green', label: '🟢 Зеленый', unit: 'сек' },
+            { value: 'red', label: '🔴 Красный', unit: 'сек' },
+            { value: 'sound', label: '🔊 Звук', unit: 'сек' },
+            { value: 'lock', label: '🔒 Замок', unit: 'сек' },
+            { value: 'd0', label: '🔘 D0', unit: 'сек' },
+            { value: 'd1', label: '🔘 D1', unit: 'сек' },
+            { value: 'open_for_out', label: '🚪 Открыть (выход)', unit: 'сек' },
+            { value: 'open_for_in', label: '🚪 Открыть (вход)', unit: 'сек' },
+            { value: 'new_address', label: '📝 Сменить адрес', unit: '' }
+        ];
+
+        const TRIGGER_LIST = [
+            { value: 'door', label: '🚪 Дверь', states: { 0: 'Закрыта', 32: 'Открыта' } },
+            { value: 'led', label: '💡 Светодиод', states: { 0: 'Выключен', 1: 'Включен' } },
+            { value: 'zumm', label: '🔊 Зуммер', states: { 0: 'Выключен', 2: 'Включен' } },
+            { value: 'sound', label: '🔊 Звук', states: { 0: 'Выключен', 4: 'Включен' } },
+            { value: 'lock', label: '🔒 Замок', states: { 0: 'Закрыт', 8: 'Открыт' } },
+            { value: 'tm', label: '⏰ Таймер', states: { 0: 'Не активен', 4: 'Активен' } },
+            { value: 'card_in', label: '💳 Карта (вход)', states: { 0: 'Нет карты', 8: 'Приложена' } },
+            { value: 'card_out', label: '💳 Карта (выход)', states: { 0: 'Нет карты', 2: 'Приложена' } },
+            { value: 'exit', label: '🚪 Кнопка выхода', states: { 0: 'Не нажата', 1: 'Нажата' } },
+            { value: 'reader', label: '📡 Считыватель', states: { 0: 'Не активен', 16: 'Активен' } },
+            { value: 'va_door', label: '📊 Дверь (аналог)', isVA: true },
+            { value: 'va_led', label: '📊 Светодиод (аналог)', isVA: true },
+            { value: 'va_zp', label: '📊 ЗП (аналог)', isVA: true },
+            { value: 'va_12', label: '📊 12V (аналог)', isVA: true }
+        ];
+
+        // ============================================================
+        // STATE
+        // ============================================================
+
+        const state = {
+            ws: null,
+            connected: false,
+            apiKey: '1356_api',
+            controllers: {},
+            converters: {},
+            currentPage: 'dashboard',
+            groupsCount: 0,
+            checksCount: 0,
+            testsCount: 0,
+            results: [],
+            allTests: [],
+            allChecks: [],
+            allGroups: [],
+            runner: {
+                result: [],
+                step: 0,
+                total: 0,
+                running: false,
+                paused: false,
+                sessionId: null,
+                controller: null,
+                checkIndex: 0,
+                testIndex: 0,
+                groupName: '',
+                checkName: '',
+                testName: ''
+            },
+            modalResolve: null,
+            groupData: null,
+            currentCheckName: null
+        };
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+
+        const $ = id => document.getElementById(id);
+        const $$ = sel => document.querySelectorAll(sel);
+
+        const dom = {
+            wsStatusDot: $('wsStatusDot'),
+            wsStatusText: $('wsStatusText'),
+            connectBtn: $('connectBtn'),
+            disconnectBtn: $('disconnectBtn'),
+            apiKey: $('apiKey'),
+            navBar: $('navBar'),
+            pages: {
+                dashboard: $('page-dashboard'),
+                runner: $('page-runner'),
+                results: $('page-results'),
+                controllers: $('page-controllers')
+            },
+            statControllers: $('statControllers'),
+            statConverters: $('statConverters'),
+            statGroups: $('statGroups'),
+            statChecks: $('statChecks'),
+            statTests: $('statTests'),
+            statResults: $('statResults'),
+            statsTime: $('statsTime'),
+            dashboardLog: $('dashboardLog'),
+            quickController: $('quickController'),
+            quickRefresh: $('quickRefresh'),
+            quickScan: $('quickScan'),
+            runnerGroup: $('runnerGroup'),
+            runnerCheck: $('runnerCheck'),
+            runnerTest: $('runnerTest'),
+            runnerStatus: $('runnerStatus'),
+            runnerStart: $('runnerStart'),
+            runnerPause: $('runnerPause'),
+            runnerResume: $('runnerResume'),
+            runnerStep: $('runnerStep'),
+            runnerStop: $('runnerStop'),
+            runnerSaveStandard: $('runnerSaveStandard'),
+            runnerCompare: $('runnerCompare'),
+            runnerProgressText: $('runnerProgressText'),
+            runnerProgressFill: $('runnerProgressFill'),
+            runnerPercent: $('runnerPercent'),
+            runnerInfo: $('runnerInfo'),
+            runnerController: $('runnerController'),
+            runnerResult: $('runnerResult'),
+            runnerResultCount: $('runnerResultCount'),
+            runnerCompareResult: $('runnerCompareResult'),
+            runnerMode: $$('input[name="runnerMode"]'),
+            resultsList: $('resultsList'),
+            resultsCount: $('resultsCount'),
+            resultsRefresh: $('resultsRefresh'),
+            resultsDelete: $('resultsDelete'),
+            compareResult1: $('compareResult1'),
+            compareResult2: $('compareResult2'),
+            compareTolerance: $('compareTolerance'),
+            compareBtn: $('compareBtn'),
+            compareResult: $('compareResult'),
+            toleranceDisplay: $('toleranceDisplay'),
+            controllersList: $('controllersList'),
+            convertersList: $('convertersList'),
+            ctrlCount: $('ctrlCount'),
+            convCount: $('convCount')
+        };
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span class="toast-icon">${icons[type] || 'ℹ️'}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('out');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ============================================================
+        // MODAL
+        // ============================================================
+
+        function showModal(title, message, confirmText = 'Удалить') {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('modalOverlay');
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalMessage').textContent = message;
+                document.getElementById('modalConfirm').textContent = confirmText;
+                overlay.classList.add('show');
+                state.modalResolve = resolve;
+            });
+        }
+
+        document.getElementById('modalCancel').addEventListener('click', () => {
+            document.getElementById('modalOverlay').classList.remove('show');
+            if (state.modalResolve) { state.modalResolve(false);
+                state.modalResolve = null; }
+        });
+
+        document.getElementById('modalConfirm').addEventListener('click', () => {
+            document.getElementById('modalOverlay').classList.remove('show');
+            if (state.modalResolve) { state.modalResolve(true);
+                state.modalResolve = null; }
+        });
+
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                document.getElementById('modalOverlay').classList.remove('show');
+                if (state.modalResolve) { state.modalResolve(false);
+                    state.modalResolve = null; }
+            }
+        });
+
+        // ============================================================
+        // LOGGING
+        // ============================================================
+
+        function addLog(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const icons = { send: '➡️', receive: '⬅️', error: '❌', info: 'ℹ️', warning: '⚠️', success: '✅', test: '🧪' };
+            const el = document.createElement('div');
+            el.className = 'log-entry';
+            el.innerHTML =
+                `<span class="time">${time}</span><span class="icon">${icons[type] || '•'}</span><span>${message}</span>`;
+            dom.dashboardLog.prepend(el);
+            while (dom.dashboardLog.children.length > 30) {
+                dom.dashboardLog.removeChild(dom.dashboardLog.lastChild);
+            }
+            console.log(`[${time}] ${type}: ${message}`);
+        }
+
+        // ============================================================
+        // WEBSOCKET
+        // ============================================================
+
+        function updateStatus(connected) {
+            state.connected = connected;
+            const dot = dom.wsStatusDot;
+            const text = dom.wsStatusText;
+            if (connected) {
+                dot.className = 'status-dot connected';
+                text.textContent = 'Подключено';
+                dom.connectBtn.disabled = true;
+                dom.disconnectBtn.disabled = false;
+            } else {
+                dot.className = 'status-dot disconnected';
+                text.textContent = 'Отключено';
+                dom.connectBtn.disabled = false;
+                dom.disconnectBtn.disabled = true;
+            }
+        }
+
+        function connectWS() {
+            const host = window.location.hostname || 'localhost';
+            const url = `ws://${host}:9090`;
+
+            addLog(`Подключение к ${url}...`, 'info');
+
+            try {
+                state.ws = new WebSocket(url);
+
+                state.ws.onopen = function() {
+                    updateStatus(true);
+                    addLog('✅ Подключено к серверу', 'success');
+
+                    setTimeout(() => {
+                        sendCommand('controllers_list');
+                        sendCommand('converters_list');
+                        sendCommand('groups_list');
+                        sendCommand('tests_list');
+                        sendCommand('checks_list');
+                        sendCommand('result_list');
+                        sendCommand('available_controllers');
+                        sendCommand('test_sessions_list');
+                    }, 300);
+                };
+
+                state.ws.onclose = function() {
+                    updateStatus(false);
+                    addLog('❌ Соединение закрыто', 'error');
+                };
+
+                state.ws.onerror = function(err) {
+                    addLog(`⚠️ Ошибка: ${err.message || 'Неизвестная ошибка'}`, 'error');
+                };
+
+                state.ws.onmessage = function(event) {
+                    handleMessage(event.data);
+                };
+
+            } catch (err) {
+                addLog(`❌ Ошибка подключения: ${err.message}`, 'error');
+            }
+        }
+
+        function disconnectWS() {
+            if (state.ws) { state.ws.close();
+                state.ws = null; }
+            updateStatus(false);
+            addLog('Отключение от сервера', 'info');
+        }
+
+        // ============================================================
+        // SEND COMMAND
+        // ============================================================
+
+        function sendCommand(cmd, params = {}) {
+            if (!state.connected) {
+                addLog('❌ Нет подключения к серверу', 'error');
+                return false;
+            }
+            const apiKey = dom.apiKey.value.trim() || '1356_api';
+            const command = { api_key: apiKey, api: cmd };
+            for (const key in params) {
+                if (params.hasOwnProperty(key)) command[key] = params[key];
+            }
+            try {
+                const json = JSON.stringify(command);
+                state.ws.send(json);
+                const preview = json.length > 200 ? json.substring(0, 200) + '...' : json;
+                addLog(`📤 ${cmd}: ${preview}`, 'send');
+                return true;
+            } catch (err) {
+                addLog(`❌ Ошибка отправки: ${err.message}`, 'error');
+                return false;
+            }
+        }
+
+        // ============================================================
+        // HANDLE MESSAGE
+        // ============================================================
+
+        function handleMessage(data) {
+            try {
+                const json = JSON.parse(data);
+                console.log('📥 Получено:', json);
+
+                // Тестовые события
+                if (json.type === 'test_event') {
+                    handleTestEvent(json);
+                    return;
+                }
+
+                // Обновление результата теста
+                if (json.api === 'test_result_update') {
+                    updateRunnerResult(json);
+                    return;
+                }
+
+                // Триггеры
+                if (json.api === 'trigger_info') {
+                    const trigger = json.trigger_info || {};
+                    const controller = trigger.controller || 'unknown';
+                    const name = trigger.name || 'unknown';
+                    const sost = trigger.sost || 0;
+                    const found = TRIGGER_LIST.find(t => t.value === name);
+                    const stateName = found?.states?.[sost] || `${name}: ${sost}`;
+                    addLog(`🔔 ${controller} → ${stateName}`, 'trigger');
+                    return;
+                }
+
+                if (json.api) {
+                    addLog(`📥 Ответ: ${json.api}`, 'receive');
+                }
+
+                if (json.check_admin === 1) {
+                    handleApiResponse(json);
+                }
+
+                if (json.info) {
+                    addLog(`❌ ${json.info}`, 'error');
+                }
+                if (json.error) {
+                    addLog(`❌ ${json.error}`, 'error');
+                }
+
+            } catch (err) {
+                const preview = data.length > 100 ? data.substring(0, 100) + '...' : data;
+                addLog(`⚠️ Ошибка обработки: ${preview}`, 'error');
+                console.error('Ошибка обработки:', err);
+            }
+        }
+
+        // ============================================================
+        // HANDLE API RESPONSE
+        // ============================================================
+
+        function handleApiResponse(json) {
+            const api = json.api;
+
+            switch (api) {
+                case 'controllers_list':
+                    state.controllers = json.list || {};
+                    renderControllers();
+                    updateQuickController();
+                    updateStats();
+                    break;
+
+                case 'converters_list':
+                    state.converters = json.list || {};
+                    renderConverters();
+                    updateStats();
+                    break;
+
+                case 'groups_list':
+                    state.allGroups = json.list || [];
+                    state.groupsCount = (json.list || []).length;
+                    updateGroupSelects(json.list || []);
+                    updateStats();
+                    break;
+
+                case 'checks_list':
+                    state.allChecks = json.list || [];
+                    state.checksCount = (json.list || []).length;
+                    updateStats();
+                    break;
+
+                case 'tests_list':
+                    state.allTests = json.list || [];
+                    state.testsCount = (json.list || []).length;
+                    updateStats();
+                    break;
+
+                case 'result_list':
+                    state.results = json.list || [];
+                    renderResultsList();
+                    updateStats();
+                    break;
+
+                case 'groups_load':
+                    if (json.data) {
+                        state.groupData = json.data;
+                        state.runner.groupName = json.data.name || '';
+                        updateRunnerChecks(json.data);
+                    }
+                    break;
+
+                case 'checks_load':
+                    if (json.data) {
+                        state.currentCheckName = json.data.name || '';
+                        updateRunnerTests(json.data);
+                        // Обновляем информацию о тесте
+                        updateRunnerInfo();
+                    }
+                    break;
+
+                case 'available_controllers':
+                    updateAvailableControllers(json.list || []);
+                    break;
+
+                // ============================================================
+                // test_init → test_start
+                // ============================================================
+                case 'test_init':
+                    if (json.result?.success) {
+                        state.runner.sessionId = json.sessionId;
+                        state.runner.controller = json.result.controller || '—';
+                        dom.runnerController.textContent = state.runner.controller;
+                        dom.runnerInfo.textContent =
+                            `${dom.runnerGroup.value} → ${dom.runnerCheck.options[dom.runnerCheck.selectedIndex]?.text || ''} → ${dom.runnerTest.options[dom.runnerTest.selectedIndex]?.text || ''}`;
+                        dom.runnerStatus.textContent = 'Готов';
+                        addLog(`🧪 Тест инициализирован, контроллер: ${state.runner.controller}`, 'test');
+
+                        // АВТОМАТИЧЕСКИ ЗАПУСКАЕМ ТЕСТ ПОСЛЕ ИНИЦИАЛИЗАЦИИ
+                        setTimeout(() => {
+                            sendCommand('test_start');
+                            addLog('▶️ Отправлен запрос на запуск теста', 'info');
+                        }, 300);
+                    } else {
+                        showToast(`❌ Ошибка инициализации: ${json.result?.error || 'неизвестная ошибка'}`, 'error');
+                    }
+                    break;
+
+                case 'test_start':
+                    if (json.result?.success) {
+                        state.runner.running = true;
+                        state.runner.paused = false;
+                        dom.runnerStatus.textContent = '▶️ Выполняется';
+                        dom.wsStatusDot.className = 'status-dot testing';
+                        addLog('🧪 Тест запущен', 'test');
+                    } else {
+                        showToast(`❌ Ошибка запуска: ${json.result?.error || 'неизвестная ошибка'}`, 'error');
+                    }
+                    break;
+
+                case 'test_pause':
+                    if (json.result?.success) {
+                        state.runner.paused = true;
+                        dom.runnerStatus.textContent = '⏸️ Пауза';
+                        addLog('⏸️ Тест на паузе', 'info');
+                    }
+                    break;
+
+                case 'test_resume':
+                    if (json.result?.success) {
+                        state.runner.paused = false;
+                        dom.runnerStatus.textContent = '▶️ Выполняется';
+                        dom.wsStatusDot.className = 'status-dot testing';
+                        addLog('▶️ Тест возобновлен', 'info');
+                    }
+                    break;
+
+                case 'test_stop':
+                    if (json.result?.success) {
+                        state.runner.running = false;
+                        state.runner.paused = false;
+                        dom.runnerStatus.textContent = '⏹️ Остановлен';
+                        dom.wsStatusDot.className = 'status-dot connected';
+                        addLog('⏹️ Тест остановлен', 'info');
+                    }
+                    break;
+
+                case 'test_status':
+                    if (json.status) {
+                        state.runner.running = json.status.running || false;
+                        state.runner.paused = json.status.paused || false;
+                        state.runner.step = json.status.currentStep || 0;
+                        state.runner.total = json.status.totalSteps || 0;
+                        state.runner.sessionId = json.status.sessionId || null;
+                        state.runner.controller = json.status.controller || '';
+                        dom.runnerController.textContent = state.runner.controller || '—';
+                        updateRunnerInfo();
+                        updateRunnerStatus();
+                        updateRunnerProgress();
+                        if (json.status.resultCount > 0 && state.runner.result.length === 0) {
+                            sendCommand('test_result');
+                        }
+                    }
+                    break;
+
+                case 'test_result':
+                    if (json.result) {
+                        state.runner.result = json.result;
+                        renderTestResult(json.result);
+                        dom.runnerResultCount.textContent = `${json.result.length} событий`;
+                    }
+                    break;
+
+                case 'test_save_standard':
+                    if (json.result?.success) {
+                        showToast('✅ Эталон сохранен успешно', 'success');
+                    } else if (json.result?.error) {
+                        showToast(`❌ ${json.result.error}`, 'error');
+                    }
+                    break;
+
+                case 'test_compare_standard':
+                    if (json.result) {
+                        if (json.result.error) {
+                            showToast(`❌ ${json.result.error}`, 'error');
+                        } else {
+                            showCompareResult(json.result);
+                        }
+                    }
+                    break;
+
+                case 'test_session_load':
+                    if (json.status) {
+                        state.runner.running = json.status.running || false;
+                        state.runner.paused = json.status.paused || false;
+                        state.runner.step = json.status.currentStep || 0;
+                        state.runner.total = json.status.totalSteps || 0;
+                        state.runner.sessionId = json.status.sessionId || null;
+                        state.runner.controller = json.status.controller || '';
+                        dom.runnerController.textContent = state.runner.controller || '—';
+                        dom.runnerInfo.textContent = json.status.group && json.status.check && json.status.test ?
+                            `${json.status.group} → ${json.status.check} → ${json.status.test}` :
+                            'Тест не выбран';
+                        updateRunnerStatus();
+                        updateRunnerProgress();
+                        if (json.result) {
+                            state.runner.result = json.result;
+                            renderTestResult(json.result);
+                            dom.runnerResultCount.textContent = `${json.result.length} событий`;
+                        }
+                        addLog(`🔄 Восстановлена сессия: ${json.status.sessionId}`, 'info');
+                    }
+                    break;
+
+                case 'test_sessions_list':
+                    if (json.sessions && json.sessions.length > 0) {
+                        const active = json.sessions.find(s => s.status === 'running' || s.status === 'paused');
+                        if (active) {
+                            sendCommand('test_session_load', { sessionId: active.sessionId });
+                        }
+                    }
+                    break;
+
+                case 'result_delete':
+                    if (json.result?.success) {
+                        showToast('🗑️ Результат удален', 'info');
+                        sendCommand('result_list');
+                    } else if (json.error) {
+                        showToast(`❌ ${json.error}`, 'error');
+                    }
+                    break;
+
+                case 'result_compare':
+                    if (json.comparison) {
+                        renderComparison(json.comparison, json.name1, json.name2);
+                    }
+                    if (json.error) {
+                        dom.compareResult.innerHTML = `<div style="color:var(--danger); padding:12px;">❌ ${json.error}</div>`;
+                    }
+                    break;
+
+                default:
+                    if (json.ok) {
+                        addLog(`✅ ${api} выполнен`, 'success');
+                    }
+            }
+        }
+
+        // ============================================================
+        // ОБНОВЛЕНИЕ ИНФОРМАЦИИ О ТЕСТЕ
+        // ============================================================
+
+        function updateRunnerInfo() {
+            const groupName = dom.runnerGroup.options[dom.runnerGroup.selectedIndex]?.text || '';
+            const checkName = dom.runnerCheck.options[dom.runnerCheck.selectedIndex]?.text || '';
+            const testName = dom.runnerTest.options[dom.runnerTest.selectedIndex]?.text || '';
+
+            if (groupName && checkName && testName) {
+                dom.runnerInfo.textContent = `${groupName} → ${checkName} → ${testName}`;
+            } else if (groupName && checkName) {
+                dom.runnerInfo.textContent = `${groupName} → ${checkName} → (выберите тест)`;
+            } else if (groupName) {
+                dom.runnerInfo.textContent = `${groupName} → (выберите проверку) → (выберите тест)`;
+            } else {
+                dom.runnerInfo.textContent = 'Тест не выбран';
+            }
+        }
+
+        // ============================================================
+        // TEST EVENT HANDLER
+        // ============================================================
+
+        function handleTestEvent(event) {
+            const ev = event.event;
+            const data = event.data || {};
+
+            switch (ev) {
+                case 'started':
+                    state.runner.running = true;
+                    state.runner.paused = false;
+                    state.runner.total = data.totalSteps || 0;
+                    state.runner.step = 0;
+                    state.runner.sessionId = data.sessionId;
+                    dom.runnerResult.innerHTML = '';
+                    dom.runnerResultCount.textContent = '0 событий';
+                    dom.runnerInfo.textContent = `${data.group} → ${data.check} → ${data.test}`;
+                    dom.runnerStatus.textContent = '▶️ Выполняется';
+                    dom.wsStatusDot.className = 'status-dot testing';
+                    dom.runnerCompareResult.style.display = 'none';
+                    updateRunnerProgress();
+                    addLog(`🧪 Тест запущен: ${data.group} → ${data.check} → ${data.test}`, 'test');
+                    break;
+
+                case 'step':
+                    state.runner.step = (data.step || 0) + 1;
+                    state.runner.total = data.total || 0;
+                    updateRunnerProgress();
+                    break;
+
+                case 'paused':
+                case 'paused_after_test':
+                    state.runner.paused = true;
+                    dom.runnerStatus.textContent = '⏸️ Пауза';
+                    dom.wsStatusDot.className = 'status-dot connected';
+                    addLog('⏸️ Тест на паузе', 'info');
+                    break;
+
+                case 'resumed':
+                    state.runner.paused = false;
+                    dom.runnerStatus.textContent = '▶️ Выполняется';
+                    dom.wsStatusDot.className = 'status-dot testing';
+                    addLog('▶️ Тест возобновлен', 'info');
+                    break;
+
+                case 'waiting_step':
+                    dom.runnerStatus.textContent = '⏭️ Ожидание шага';
+                    addLog(`⏭️ Шаг ${(data.step || 0) + 1}/${data.total || 0}`, 'info');
+                    break;
+
+                case 'finished':
+                    state.runner.running = false;
+                    state.runner.paused = false;
+                    dom.runnerStatus.textContent = '✅ Завершен';
+                    dom.wsStatusDot.className = 'status-dot connected';
+                    addLog(`✅ Тест завершен, событий: ${data.total || 0}`, 'success');
+                    if (data.result) {
+                        state.runner.result = data.result;
+                        renderTestResult(data.result);
+                        dom.runnerResultCount.textContent = `${data.result.length} событий`;
+                    }
+                    break;
+
+                case 'standard_saved':
+                    showToast(`✅ Эталон сохранен для теста "${data.test}"`, 'success');
+                    addLog(`💾 Эталон сохранен для "${data.test}"`, 'success');
+                    break;
+            }
+        }
+
+        // ============================================================
+        // RENDER FUNCTIONS
+        // ============================================================
+
+        function renderControllers() {
+            const list = dom.controllersList;
+            const keys = Object.keys(state.controllers);
+            if (keys.length === 0) {
+                list.innerHTML =
+                `<div class="empty-state"><div class="icon">🔍</div><p>Контроллеры не найдены</p></div>`;
+                dom.ctrlCount.textContent = '0';
+                return;
+            }
+            let html = '';
+            for (const key of keys) {
+                const c = state.controllers[key];
+                const active = c.active !== false;
+                html += `
+                    <div class="ctrl-item" data-id="${key}">
+                        <div class="row">
+                            <div>
+                                <div class="name">${key}</div>
+                                <div class="details">Адрес: ${c.address || '?'} | Тип: ${c.type || '?'} | SN: ${c.number || '?'}</div>
+                            </div>
+                            <div>
+                                <span class="status-badge${active ? '' : ' inactive'}">${active ? '🟢 Активен' : '⚪ Неактивен'}</span>
+                                <span class="text-xs text-muted" style="margin-left:6px;">Триггеров: ${c.triggers?.length || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            list.innerHTML = html;
+            dom.ctrlCount.textContent = keys.length;
+        }
+
+        function renderConverters() {
+            const list = dom.convertersList;
+            const keys = Object.keys(state.converters);
+            if (keys.length === 0) {
+                list.innerHTML =
+                `<div class="empty-state"><div class="icon">🔌</div><p>Нет подключенных конвертеров</p></div>`;
+                dom.convCount.textContent = '0';
+                return;
+            }
+            let html = '';
+            for (const key of keys) {
+                const c = state.converters[key];
+                html += `
+                    <div class="ctrl-item" style="border-left-color:var(--success);">
+                        <div class="row">
+                            <div>
+                                <div class="name">${c.model || 'Конвертер'} #${key}</div>
+                                <div class="details">SN: ${c.number || '?'} | Версия: ${c.version || '?'}</div>
+                            </div>
+                            <div>
+                                <span class="status-badge${c.connected !== false ? '' : ' inactive'}">${c.connected !== false ? '🟢 Подключен' : '⚪ Отключен'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            list.innerHTML = html;
+            dom.convCount.textContent = keys.length;
+        }
+
+        function updateQuickController() {
+            const select = dom.quickController;
+            const current = select.value;
+            select.innerHTML = '<option value="">-- выберите --</option>';
+            for (const key of Object.keys(state.controllers)) {
+                const c = state.controllers[key];
+                if (c.active !== false) {
+                    select.innerHTML += `<option value="${key}">${key}</option>`;
+                }
+            }
+            if (current && select.querySelector(`option[value="${current}"]`)) select.value = current;
+        }
+
+        function updateStats() {
+            dom.statControllers.textContent = Object.keys(state.controllers).length;
+            dom.statConverters.textContent = Object.keys(state.converters).length;
+            dom.statGroups.textContent = state.groupsCount || 0;
+            dom.statChecks.textContent = state.checksCount || 0;
+            dom.statTests.textContent = state.testsCount || 0;
+            dom.statResults.textContent = state.results.length || 0;
+            dom.statsTime.textContent = new Date().toLocaleTimeString();
+        }
+
+        function updateAvailableControllers(list) {
+            // Для быстрых действий
+        }
+
+        // ============================================================
+        // RUNNER FUNCTIONS
+        // ============================================================
+
+        function updateGroupSelects(list) {
+            const select = dom.runnerGroup;
+            const current = select.value;
+            select.innerHTML = '<option value="">-- выберите --</option>';
+            list.forEach(g => {
+                select.innerHTML += `<option value="${g.name}">${g.name}</option>`;
+            });
+
+            // Обновляем информацию
+            if (current && select.querySelector(`option[value="${current}"]`)) {
+                select.value = current;
+                dom.runnerInfo.textContent = `${current} → (выберите проверку) → (выберите тест)`;
+                sendCommand('groups_load', { name: current });
+            } else {
+                select.value = '';
+                dom.runnerCheck.innerHTML = '<option value="">-- выберите --</option>';
+                dom.runnerTest.innerHTML = '<option value="">-- выберите --</option>';
+                dom.runnerInfo.textContent = 'Тест не выбран';
+            }
+        }
+
+        function updateRunnerChecks(groupData) {
+            const checks = groupData.checks || [];
+            const select = dom.runnerCheck;
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">-- выберите --</option>';
+
+            const checkNames = checks.map(c => typeof c === 'string' ? c : c.name || 'Проверка');
+
+            checkNames.forEach((name, i) => {
+                select.innerHTML += `<option value="${i}">${name}</option>`;
+            });
+
+            if (currentValue && parseInt(currentValue) < checkNames.length) {
+                select.value = currentValue;
+                dom.runnerInfo.textContent =
+                    `${dom.runnerGroup.value} → ${checkNames[parseInt(currentValue)]} → (выберите тест)`;
+                sendCommand('checks_load', { name: checkNames[parseInt(currentValue)] });
+            } else if (checkNames.length > 0) {
+                select.value = '0';
+                dom.runnerInfo.textContent = `${dom.runnerGroup.value} → ${checkNames[0]} → (выберите тест)`;
+                sendCommand('checks_load', { name: checkNames[0] });
+            } else {
+                dom.runnerTest.innerHTML = '<option value="">-- выберите --</option>';
+                dom.runnerInfo.textContent = `${dom.runnerGroup.value} → (нет проверок)`;
+            }
+        }
+
+        function updateRunnerTests(checkData) {
+            const tests = checkData.tests || [];
+            const select = dom.runnerTest;
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">-- выберите --</option>';
+
+            const testNames = tests.map(t => typeof t === 'string' ? t : t.name || 'Тест');
+
+            testNames.forEach((name, i) => {
+                select.innerHTML += `<option value="${i}">${name}</option>`;
+            });
+
+            if (currentValue && parseInt(currentValue) < testNames.length) {
+                select.value = currentValue;
+            } else if (testNames.length > 0) {
+                select.value = '0';
+            }
+
+            // Обновляем информацию
+            const groupName = dom.runnerGroup.options[dom.runnerGroup.selectedIndex]?.text || '';
+            const checkName = dom.runnerCheck.options[dom.runnerCheck.selectedIndex]?.text || '';
+            const testName = testNames[parseInt(select.value)] || '';
+
+            if (groupName && checkName && testName) {
+                dom.runnerInfo.textContent = `${groupName} → ${checkName} → ${testName}`;
+            } else if (groupName && checkName) {
+                dom.runnerInfo.textContent = `${groupName} → ${checkName} → (выберите тест)`;
+            }
+        }
+
+        function updateRunnerStatus() {
+            const status = dom.runnerStatus;
+            const dot = dom.wsStatusDot;
+
+            if (state.runner.running) {
+                if (state.runner.paused) {
+                    status.textContent = '⏸️ Пауза';
+                    dot.className = 'status-dot connected';
+                } else {
+                    status.textContent = '▶️ Выполняется';
+                    dot.className = 'status-dot testing';
+                }
+            } else {
+                status.textContent = '⏹️ Остановлен';
+                dot.className = 'status-dot connected';
+            }
+        }
+
+        function updateRunnerProgress() {
+            const step = state.runner.step || 0;
+            const total = state.runner.total || 0;
+            const percent = total > 0 ? Math.round((step / total) * 100) : 0;
+
+            dom.runnerProgressText.textContent = `${step} / ${total}`;
+            dom.runnerProgressFill.style.width = `${percent}%`;
+            dom.runnerPercent.textContent = `${percent}%`;
+        }
+
+        function updateRunnerResult(json) {
+            if (json.result) {
+                state.runner.result = json.result;
+                renderTestResult(json.result);
+                dom.runnerResultCount.textContent = `${json.result.length} событий`;
+            }
+            if (json.step !== undefined) {
+                state.runner.step = json.step;
+                state.runner.total = json.total || state.runner.total;
+                updateRunnerProgress();
+            }
+            if (json.running !== undefined) {
+                state.runner.running = json.running;
+                state.runner.paused = json.paused || false;
+                updateRunnerStatus();
+            }
+        }
+
+        function renderTestResult(result) {
+            const container = dom.runnerResult;
+            if (!result || result.length === 0) {
+                container.innerHTML = '<div class="empty-result">Нет событий</div>';
+                return;
+            }
+
+            let html = '';
+            for (let i = 0; i < result.length; i++) {
+                const [time, cmd, val] = result[i];
+                const label = CMD_LIST.find(c => c.value === cmd)?.label || cmd;
+                html += `
+                    <div class="event">
+                        <span class="idx">#${i+1}</span>
+                        <span class="cmd">${label}</span>
+                        <span class="val">${val}</span>
+                        <span class="time">${time}ms</span>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showCompareResult(result) {
+            const container = dom.runnerCompareResult;
+            if (!container) return;
+
+            container.style.display = 'block';
+
+            if (result.error) {
+                container.innerHTML = `<div class="compare-result error">❌ ${result.error}</div>`;
+                return;
+            }
+
+            const errors = result.errors || [];
+            const total = result.total || 0;
+            const errorCount = result.errorCount || 0;
+
+            let html = `
+                <div class="compare-result ${errorCount === 0 ? 'success' : 'error'}">
+                    <strong>Сравнение с эталоном</strong><br>
+                    Всего: ${total} | Ошибок: ${errorCount} | ${errorCount === 0 ? '✅ Совпадает' : '❌ Есть расхождения'}
+                </div>
+            `;
+
+            if (errors.length > 0) {
+                html += `<div style="margin-top:4px; max-height:100px; overflow-y:auto;">`;
+                for (const err of errors) {
+                    let msg = `#${err.index + 1}: `;
+                    switch (err.type) {
+                        case 'missing':
+                            msg += `❌ отсутствует, ожидалось: ${err.expected?.[1]}:${err.expected?.[2]}`;
+                            break;
+                        case 'extra':
+                            msg += `⚠️ лишнее: ${err.got?.[1]}:${err.got?.[2]}`;
+                            break;
+                        case 'command_mismatch':
+                            msg += `❌ команда: ожидалось ${err.expected}, получено ${err.got}`;
+                            break;
+                        case 'value_mismatch':
+                            msg += `❌ значение: ожидалось ${err.expected}, получено ${err.got}`;
+                            break;
+                        case 'time_mismatch':
+                            msg += `⏱️ время: ожидалось ${err.expected}ms, получено ${err.got}ms (разница ${err.diff}ms)`;
+                            break;
+                        default:
+                            msg += `❌ ${JSON.stringify(err)}`;
+                    }
+                    html += `<div class="error-item">${msg}</div>`;
+                }
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // RESULTS FUNCTIONS
+        // ============================================================
+
+        function renderResultsList() {
+            const list = dom.resultsList;
+            const results = state.results || [];
+
+            if (results.length === 0) {
+                list.innerHTML =
+                    `<div class="empty-state"><div class="icon">📭</div><p>Нет сохраненных результатов</p></div>`;
+                dom.resultsCount.textContent = '0';
+                updateCompareSelects();
+                return;
+            }
+
+            let html = '';
+            for (const item of results) {
+                const name = item.name || 'Без названия';
+                const group = item.group || '';
+                const check = item.check || '';
+                const test = item.test || '';
+                const count = item.result?.length || 0;
+                const time = item.timestamp || '';
+
+                html += `
+                    <div class="item" data-name="${name}" style="padding:6px 10px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; font-size:13px; cursor:pointer;">
+                        <div>
+                            <div style="font-weight:500;">${name}</div>
+                            <div style="font-size:11px; color:var(--text-muted);">${group} → ${check} → ${test} (${count} событий)</div>
+                        </div>
+                        <div style="font-size:11px; color:var(--text-dim);">${time}</div>
+                    </div>
+                `;
+            }
+            list.innerHTML = html;
+            dom.resultsCount.textContent = results.length;
+
+            list.querySelectorAll('.item').forEach(el => {
+                el.addEventListener('click', function() {
+                    list.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            updateCompareSelects();
+        }
+
+        function updateCompareSelects() {
+            const results = state.results || [];
+            const sel1 = dom.compareResult1;
+            const sel2 = dom.compareResult2;
+            const val1 = sel1.value;
+            const val2 = sel2.value;
+
+            const options = results.map(r =>
+                `<option value="${r.name}">${r.name}</option>`
+            ).join('');
+
+            sel1.innerHTML = `<option value="">— эталон —</option>${options}`;
+            sel2.innerHTML = `<option value="">— проверяемый —</option>${options}`;
+
+            if (val1 && sel1.querySelector(`option[value="${val1}"]`)) sel1.value = val1;
+            if (val2 && sel2.querySelector(`option[value="${val2}"]`)) sel2.value = val2;
+        }
+
+        function renderComparison(comparison, name1, name2) {
+            const container = dom.compareResult;
+            const errors = comparison.errors || [];
+            const total = comparison.total || 0;
+            const errorCount = comparison.errorCount || 0;
+
+            let html = `
+                <div class="compare-result-box ${errorCount === 0 ? 'success' : 'error'}">
+                    <strong>${name1}</strong> vs <strong>${name2}</strong><br>
+                    Всего: ${total} | Ошибок: ${errorCount} | ${errorCount === 0 ? '✅ Совпадает' : '❌ Есть расхождения'}
+                </div>
+            `;
+
+            if (errors.length > 0) {
+                html += `<div style="margin-top:6px; max-height:160px; overflow-y:auto;">`;
+                for (const err of errors) {
+                    let msg = `#${err.index + 1}: `;
+                    switch (err.type) {
+                        case 'missing':
+                            msg += `❌ отсутствует, ожидалось: ${err.expected?.[1]}:${err.expected?.[2]}`;
+                            break;
+                        case 'extra':
+                            msg += `⚠️ лишнее: ${err.got?.[1]}:${err.got?.[2]}`;
+                            break;
+                        case 'command_mismatch':
+                            msg += `❌ команда: ожидалось ${err.expected}, получено ${err.got}`;
+                            break;
+                        case 'value_mismatch':
+                            msg += `❌ значение: ожидалось ${err.expected}, получено ${err.got}`;
+                            break;
+                        case 'time_mismatch':
+                            msg += `⏱️ время: ожидалось ${err.expected}ms, получено ${err.got}ms (разница ${err.diff}ms)`;
+                            break;
+                        default:
+                            msg += `❌ ${JSON.stringify(err)}`;
+                    }
+                    html += `<div class="compare-error-item">${msg}</div>`;
+                }
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // RUNNER ACTIONS
+        // ============================================================
+
+        function initRunner() {
+            dom.runnerGroup.addEventListener('change', function() {
+                const name = this.value;
+                if (name) {
+                    state.runner.checkIndex = 0;
+                    state.runner.testIndex = 0;
+                    dom.runnerCheck.innerHTML = '<option value="">-- загрузка --</option>';
+                    dom.runnerTest.innerHTML = '<option value="">-- загрузка --</option>';
+                    dom.runnerInfo.textContent = `${name} → (загрузка проверок...)`;
+                    sendCommand('groups_load', { name });
+                } else {
+                    dom.runnerCheck.innerHTML = '<option value="">-- выберите --</option>';
+                    dom.runnerTest.innerHTML = '<option value="">-- выберите --</option>';
+                    dom.runnerInfo.textContent = 'Тест не выбран';
+                }
+            });
+
+            dom.runnerCheck.addEventListener('change', function() {
+                const idx = parseInt(this.value);
+                if (!isNaN(idx) && dom.runnerGroup.value && state.groupData) {
+                    const checks = state.groupData.checks || [];
+                    const checkNames = checks.map(c => typeof c === 'string' ? c : c.name || 'Проверка');
+                    if (checkNames[idx]) {
+                        dom.runnerInfo.textContent =
+                            `${dom.runnerGroup.value} → ${checkNames[idx]} → (загрузка тестов...)`;
+                        dom.runnerTest.innerHTML = '<option value="">-- загрузка --</option>';
+                        sendCommand('checks_load', { name: checkNames[idx] });
+                    }
+                }
+            });
+
+            // ============================================================
+            // КНОПКА СТАРТ — отправляет test_init, test_start отправляется автоматически после ответа
+            // ============================================================
+            dom.runnerStart.addEventListener('click', function() {
+                const group = dom.runnerGroup.value;
+                const check = dom.runnerCheck.value;
+                const test = dom.runnerTest.value;
+
+                if (!group || check === '' || test === '') {
+                    showToast('❌ Выберите группу, проверку и тест', 'error');
+                    return;
+                }
+
+                const mode = document.querySelector('input[name="runnerMode"]:checked')?.value || 'auto';
+
+                // Отправляем test_init, test_start отправится автоматически после успешной инициализации
+                sendCommand('test_init', {
+                    groupName: group,
+                    checkIndex: parseInt(check),
+                    testIndex: parseInt(test),
+                    mode: mode
+                });
+
+                addLog(`📤 Отправлен test_init для: ${group} → ${check} → ${test}`, 'send');
+            });
+
+            dom.runnerPause.addEventListener('click', function() {
+                sendCommand('test_pause');
+            });
+
+            dom.runnerResume.addEventListener('click', function() {
+                sendCommand('test_resume');
+            });
+
+            dom.runnerStep.addEventListener('click', function() {
+                sendCommand('test_step');
+            });
+
+            dom.runnerStop.addEventListener('click', function() {
+                sendCommand('test_stop');
+            });
+
+            dom.runnerSaveStandard.addEventListener('click', function() {
+                if (!state.runner.sessionId) {
+                    showToast('❌ Нет активного теста', 'warning');
+                    return;
+                }
+                if (state.runner.result.length === 0) {
+                    showToast('❌ Нет результатов для сохранения', 'warning');
+                    return;
+                }
+                showModal('Сохранение эталона',
+                    `Сохранить текущий результат (${state.runner.result.length} событий) как эталон?`,
+                    'Сохранить как эталон'
+                ).then(confirmed => {
+                    if (confirmed) {
+                        sendCommand('test_save_standard');
+                    }
+                });
+            });
+
+            dom.runnerCompare.addEventListener('click', function() {
+                if (!state.runner.sessionId) {
+                    showToast('❌ Нет активного теста', 'warning');
+                    return;
+                }
+                if (state.runner.result.length === 0) {
+                    showToast('❌ Нет результатов для сравнения', 'warning');
+                    return;
+                }
+                sendCommand('test_compare_standard', { tolerance: 100 });
+            });
+        }
+
+        // ============================================================
+        // RESULTS ACTIONS
+        // ============================================================
+
+        function initResults() {
+            dom.resultsRefresh.addEventListener('click', function() {
+                sendCommand('result_list');
+            });
+
+            dom.resultsDelete.addEventListener('click', async function() {
+                const selected = dom.resultsList.querySelector('.item.active');
+                if (!selected) {
+                    showToast('❌ Выберите результат для удаления', 'warning');
+                    return;
+                }
+                const name = selected.dataset.name;
+                if (!name) {
+                    showToast('❌ Не удалось определить имя', 'error');
+                    return;
+                }
+                const confirmed = await showModal('Удаление результата',
+                    `Вы уверены, что хотите удалить "${name}"?`, 'Удалить');
+                if (confirmed) {
+                    sendCommand('result_delete', { name });
+                    setTimeout(() => sendCommand('result_list'), 500);
+                }
+            });
+
+            dom.compareBtn.addEventListener('click', function() {
+                const name1 = dom.compareResult1.value;
+                const name2 = dom.compareResult2.value;
+                if (!name1 || !name2) {
+                    showToast('❌ Выберите два результата для сравнения', 'error');
+                    return;
+                }
+                const tolerance = parseInt(dom.compareTolerance.value) || 100;
+                dom.toleranceDisplay.textContent = tolerance;
+                sendCommand('result_compare', { name1, name2, tolerance });
+            });
+
+            dom.compareTolerance.addEventListener('input', function() {
+                dom.toleranceDisplay.textContent = this.value || 100;
+            });
+        }
+
+        // ============================================================
+        // QUICK ACTIONS
+        // ============================================================
+
+        dom.quickRefresh.addEventListener('click', function() {
+            sendCommand('controllers_list');
+            sendCommand('converters_list');
+            sendCommand('available_controllers');
+            showToast('🔄 Обновление списка...', 'info');
+        });
+
+        dom.quickScan.addEventListener('click', function() {
+            sendCommand('controllers_list');
+            sendCommand('converters_list');
+            sendCommand('available_controllers');
+            showToast('🔍 Поиск контроллеров...', 'info');
+            setTimeout(() => {
+                sendCommand('controllers_list');
+                sendCommand('converters_list');
+                sendCommand('available_controllers');
+            }, 1000);
+        });
+
+        document.querySelectorAll('.quick-cmd').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const cmd = this.dataset.cmd;
+                const controller = dom.quickController.value;
+                if (!controller) { showToast('❌ Выберите контроллер', 'error'); return; }
+                const val = prompt('Интервал (сек):', '3');
+                if (val === null) return;
+                const num = parseFloat(val) || 0;
+                sendCommand(cmd, { controller, interval: num });
+                showToast(`⚡ ${cmd} → ${controller} (${num}с)`, 'success');
+            });
+        });
+
+        // ============================================================
+        // NAVIGATION
+        // ============================================================
+
+        dom.navBar.addEventListener('click', function(e) {
+            const tab = e.target.closest('.nav-tab');
+            if (!tab) return;
+            const page = tab.dataset.page;
+            if (!page) return;
+
+            dom.navBar.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            for (const key in dom.pages) {
+                dom.pages[key].classList.toggle('active', key === page);
+            }
+
+            state.currentPage = page;
+
+            switch (page) {
+                case 'controllers':
+                    sendCommand('controllers_list');
+                    sendCommand('converters_list');
+                    break;
+                case 'runner':
+                    sendCommand('groups_list');
+                    sendCommand('test_status');
+                    sendCommand('test_sessions_list');
+                    break;
+                case 'results':
+                    sendCommand('result_list');
+                    break;
+                case 'dashboard':
+                    sendCommand('controllers_list');
+                    sendCommand('converters_list');
+                    sendCommand('groups_list');
+                    sendCommand('result_list');
+                    break;
+            }
+        });
+
+        // ============================================================
+        // CONNECTION
+        // ============================================================
+
+        dom.connectBtn.addEventListener('click', connectWS);
+        dom.disconnectBtn.addEventListener('click', disconnectWS);
+
+        // ============================================================
+        // INIT
+        // ============================================================
+
+        function init() {
+            showToast('🚀 Интерфейс загружен v3.3', 'info');
+
+            initRunner();
+            initResults();
+
+            setTimeout(() => {
+                if (!state.connected) connectWS();
+            }, 500);
+
+            setInterval(() => {
+                if (state.connected && state.currentPage === 'runner') {
+                    sendCommand('test_status');
+                }
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        // ============================================================
+        // EXPORTS
+        // ============================================================
+
+        window.state = state;
+        window.CMD_LIST = CMD_LIST;
+        window.TRIGGER_LIST = TRIGGER_LIST;
+        window.sendCommand = sendCommand;
+        window.showToast = showToast;
+        window.showModal = showModal;
+        window.addLog = addLog;
+        window.renderControllers = renderControllers;
+        window.renderConverters = renderConverters;
+        window.updateQuickController = updateQuickController;
+        window.updateStats = updateStats;
+        window.dom = dom;
+        window.handleTestEvent = handleTestEvent;
+        window.updateRunnerResult = updateRunnerResult;
+        window.initRunner = initRunner;
+        window.initResults = initResults;
+        window.updateGroupSelects = updateGroupSelects;
+        window.updateRunnerChecks = updateRunnerChecks;
+        window.updateRunnerTests = updateRunnerTests;
+        window.updateRunnerInfo = updateRunnerInfo;
+    </script>
+
+</body>
+</html>
